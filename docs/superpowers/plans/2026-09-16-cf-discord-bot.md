@@ -1727,7 +1727,7 @@ def test_detect_ignores_none_verdict():
 
 `tests/test_solve_processor.py`:
 ```python
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from bot.cf.models import Problem, Submission
@@ -1741,7 +1741,7 @@ def S(id, cid, idx, rating, t):
 
 async def test_process_user_rewards_and_streak(session):
     await users.create_user(session, 1, "a")
-    await solved.add_solved(session, 1, 9, "Z", __import__("datetime").datetime(2026, 1, 1, tzinfo=__import__("datetime").timezone.utc))
+    await solved.add_solved(session, 1, 9, "Z", datetime(2026, 1, 1, tzinfo=timezone.utc))
     await session.commit()
     today = date(2026, 9, 16)
     results = await process_user(session, 1, [S(1, 1, "A", 900, 100), S(2, 9, "Z", 3000, 200), S(3, 2, "B", None, 300)], today)
