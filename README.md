@@ -1,4 +1,4 @@
-# FanClub Bot
+# FanClub
 
 A Discord bot for the FanClub competitive programming community at Universitas Brawijaya. It links Discord accounts to Codeforces handles and turns solved problems into levels, ranks, and a shared leaderboard.
 
