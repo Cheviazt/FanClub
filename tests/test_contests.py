@@ -137,8 +137,11 @@ async def test_reminder_sends_everyone_and_gif():
 
 
 def test_help_embeds_render():
-    how = how_embed()
-    assert any(f.name == "Ranks by level" and "Legendary Master" in f.value for f in how.fields)
-    assert len(how.description) < 4096 and sum(len(f.value) for f in how.fields) < 6000
+    how = how_embed({"Rookie": 123})
+    ranks = next(f for f in how.fields if f.name == "▸ Ranks")
+    assert "<@&123>" in ranks.value and "**Elite**" in ranks.value
+    assert "0 to 20,999 EXP" in ranks.value and "4,515,000 EXP and beyond" in ranks.value
+    assert "FanClub" in how.title and "Universitas Brawijaya" in how.description
+    assert len(ranks.value) <= 1024 and sum(len(f.value) for f in how.fields) < 6000
     guide = howtoregist_embed()
-    assert guide.fields[0].name.startswith("1.") and "Compilation Error" in guide.fields[2].value
+    assert len(guide.fields) == 3 and "/register" in guide.fields[1].value

@@ -33,7 +33,8 @@ class FanClubBot(commands.Bot):
     def __init__(self, settings: Settings) -> None:
         intents = discord.Intents.default()
         intents.members = True
-        super().__init__(command_prefix="!", intents=intents, allowed_mentions=discord.AllowedMentions.none())
+        intents.message_content = True
+        super().__init__(command_prefix="$", intents=intents, allowed_mentions=discord.AllowedMentions.none(), help_command=None)
         self.settings = settings
         self.engine = make_engine(settings.database_url)
         self.session_factory = make_session_factory(self.engine)

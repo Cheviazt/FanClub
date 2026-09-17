@@ -10,7 +10,7 @@ Discord bot for a competitive programming community, linked to Codeforces.
 - `/daily`: three personal daily problems (900, 1200, 1600) that you have never solved.
 - `/grinding <count> <rating> [tags]`: 1 to 4 random unsolved problems at an exact rating; tags (comma separated) must all be present.
 - `/unregister`: unlink your handle and delete all progress, after a confirmation button.
-- `/how` and `/howtoregist`: in-Discord guides to the bot and to registration.
+- `/how` and `/howtoregist` (also `$how`, `$howtoregist`): community welcome with ranks and commands, and a three step registration guide.
 - Contest announcements (Codeforces, CodeChef, AtCoder) up to a week ahead plus a reminder one hour before start, in `CONTEST_CHANNEL_ID`.
 - Daily practice reminder at 09:00 Asia/Jakarta in `REMINDER_CHANNEL_ID` (mentions everyone).
 - `/refresh [@user]`: resync Codeforces data, award missed solves, fix level, rank role, and nickname. Refreshing someone else needs Manage Server. 60 second cooldown per user.
@@ -18,7 +18,7 @@ Discord bot for a competitive programming community, linked to Codeforces.
 
 ## Setup
 
-1. Create a Discord application, enable the Server Members intent, invite the bot with `applications.commands`, `Manage Roles`, `Manage Nicknames`, `Send Messages`, `Attach Files`.
+1. Create a Discord application, enable the Server Members and Message Content intents, invite the bot with `applications.commands`, `Manage Roles`, `Manage Nicknames`, `Send Messages`, `Attach Files`.
 2. Copy `.env.example` to `.env` and fill `DISCORD_TOKEN`, `GUILD_ID`, `NOTIFY_CHANNEL_ID`. Optional: `CONTEST_CHANNEL_ID`, `REMINDER_CHANNEL_ID` (the bot needs Mention Everyone there).
 3. Run:
 
