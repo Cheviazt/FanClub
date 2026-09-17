@@ -25,31 +25,37 @@ def announcement_embed(contest: Contest) -> discord.Embed:
     start = int(contest.start.timestamp())
     end = int(contest.end.timestamp())
     embed = discord.Embed(
-        title=discord.utils.escape_markdown(contest.name),
+        title=f"★ {discord.utils.escape_markdown(contest.name)}",
         url=contest.url,
-        description="A new contest has been scheduled. Mark your calendar.",
+        description=f"A new contest is on the calendar. Starts <t:{start}:R>.",
         colour=PLATFORM_COLORS.get(contest.platform, 0x1E88E5),
     )
-    embed.set_author(name=contest.platform)
-    embed.add_field(name="Starts", value=f"<t:{start}:F>\n<t:{start}:R>", inline=True)
-    embed.add_field(name="Ends", value=f"<t:{end}:F>", inline=True)
-    embed.add_field(name="Duration", value=format_duration(contest.duration), inline=True)
+    embed.set_author(name=f"◆ {contest.platform}")
+    embed.add_field(name="▸ Starts", value=f"<t:{start}:F>", inline=True)
+    embed.add_field(name="▸ Ends", value=f"<t:{end}:F>", inline=True)
+    embed.add_field(name="▸ Duration", value=format_duration(contest.duration), inline=True)
     if contest.rated_range:
-        embed.add_field(name="Rated range", value=contest.rated_range, inline=True)
-    embed.set_footer(text=f"{contest.platform} · {contest.key}")
+        embed.add_field(name="▸ Rated range", value=contest.rated_range, inline=True)
+    embed.set_footer(text=f"{contest.platform} · {contest.key} · just think then code it")
     return embed
 
 
 def reminder_embed(contest: Contest) -> discord.Embed:
     start = int(contest.start.timestamp())
     embed = discord.Embed(
-        title=f"Starting soon: {discord.utils.escape_markdown(contest.name)}",
+        title=f"⏳ Starting soon: {discord.utils.escape_markdown(contest.name)}",
         url=contest.url,
-        description=f"Begins <t:{start}:R> at <t:{start}:t>. Duration {format_duration(contest.duration)}. Register now if you have not yet.",
+        description=(
+            f"▸ Begins <t:{start}:R> at <t:{start}:t>
+"
+            f"▸ Duration {format_duration(contest.duration)}
+"
+            "▸ Register now if you have not yet. Good luck!"
+        ),
         colour=PLATFORM_COLORS.get(contest.platform, 0x1E88E5),
     )
-    embed.set_author(name=contest.platform)
-    embed.set_footer(text=f"{contest.platform} · {contest.key}")
+    embed.set_author(name=f"◆ {contest.platform}")
+    embed.set_footer(text=f"{contest.platform} · {contest.key} · just think then code it")
     return embed
 
 

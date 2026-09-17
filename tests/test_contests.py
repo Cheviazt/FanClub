@@ -90,12 +90,12 @@ def test_select_due_windows():
 def test_embeds_and_view():
     c = Contest(ATCODER, "abc1", "Beginner *Contest* 1", NOW + timedelta(days=1), timedelta(minutes=100), "https://atcoder.jp/contests/abc1", "- 1999")
     embed = announcement_embed(c)
-    assert embed.title == "Beginner \\*Contest\\* 1" and embed.url == c.url
+    assert embed.title.endswith("Beginner \*Contest\* 1") and embed.url == c.url
     names = [f.name for f in embed.fields]
-    assert names == ["Starts", "Ends", "Duration", "Rated range"]
-    assert "<t:" in embed.fields[0].value
+    assert [n.split(" ", 1)[1] for n in names] == ["Starts", "Ends", "Duration", "Rated range"]
+    assert "<t:" in embed.fields[0].value and "<t:" in embed.description
     reminder = reminder_embed(c)
-    assert reminder.title.startswith("Starting soon:")
+    assert "Starting soon:" in reminder.title
     button = contest_view(c).children[0]
     assert button.url == c.url and button.label == "Open on AtCoder"
 
