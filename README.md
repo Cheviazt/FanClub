@@ -13,6 +13,7 @@ Discord bot for a competitive programming community, linked to Codeforces.
 - `/how` and `/howtoregist` (also `$how`, `$howtoregist`): community welcome with ranks and commands, and a three step registration guide.
 - Contest announcements (Codeforces, CodeChef, AtCoder) up to a week ahead plus a reminder one hour before start, in `CONTEST_CHANNEL_ID`.
 - Daily practice reminder at 09:00 Asia/Jakarta in `REMINDER_CHANNEL_ID` (mentions everyone).
+- `/resetall` (administrators): strips every manageable role except those in `RESET_KEEP_ROLE_IDS` and clears every nickname, after a confirmation button.
 - `/refresh [@user]`: resync Codeforces data, award missed solves, fix level, rank role, and nickname. Refreshing someone else needs Manage Server. 60 second cooldown per user.
 - Background poller: new accepted solves give EXP (`rating / 10`) and money (`rating / 200`), update level, rank role, nickname, streak, and post a notification.
 

@@ -17,3 +17,8 @@ class Settings(BaseSettings):
     data_dir: str = "data"
     reminder_channel_id: int | None = None
     contest_channel_id: int | None = None
+    reset_keep_role_ids: str = "1492609991717163230,1492610204611907644,1492609581740851353,1492608389413474324,1492607678948708548"
+
+    @property
+    def keep_role_ids(self) -> set[int]:
+        return {int(part) for part in self.reset_keep_role_ids.split(",") if part.strip()}
