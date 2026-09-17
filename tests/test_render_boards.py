@@ -33,8 +33,10 @@ def test_render_accepted():
     from decimal import Decimal
 
     from bot.render.accepted import AcceptedData, render_accepted
+    from bot.render.fonts import ASSETS_DIR
 
     data = AcceptedData("cheviazt", "Rookie", Problem(1842, "B", "Tenzing and Books", 900, ("math", "greedy")), 90, Decimal("4.50"), 3, 5)
-    assert Image.open(io.BytesIO(render_accepted(data))).size == (600, 300)
+    template = Image.open(ASSETS_DIR / "acc.png").size
+    assert Image.open(io.BytesIO(render_accepted(data))).size == template
     unrated = AcceptedData("h", "Elite", Problem(1, "A", "x", None, ()), 0, Decimal("0.00"), 1, 0)
-    assert Image.open(io.BytesIO(render_accepted(unrated))).size == (600, 300)
+    assert Image.open(io.BytesIO(render_accepted(unrated))).size == template
