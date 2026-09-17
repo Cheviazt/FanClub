@@ -35,7 +35,6 @@ Once a member links their Codeforces handle, the bot watches their submissions. 
 
 - Docker and Docker Compose on the host
 - A Discord application with a bot user
-- Python 3.12 if you want to run the tests or develop locally
 
 ## Installation
 
@@ -72,29 +71,6 @@ docker compose up -d --build
 ```
 
 The bot container runs database migrations and then connects to Discord. Follow the logs with `docker compose logs -f bot`. PostgreSQL data lives in the `pgdata` volume and cached avatars in the `botdata` volume, so rebuilding the image does not lose anything.
-
-## Deployment with GitHub Actions
-
-The workflow in `.github/workflows/deploy.yml` runs the test suite on every push to `main` and then connects to the server over SSH to pull the latest code and rebuild the containers.
-
-On the server, clone the repository to `~/fanclub`, create `.env`, and start the stack once by hand. Generate an SSH key pair for the workflow and add the public key to `~/.ssh/authorized_keys`:
-
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/github_actions -N ""
-cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
-```
-
-Add these repository secrets on GitHub: `VPS_HOST`, `VPS_USER`, `VPS_PORT`, and `VPS_SSH_KEY` (the private key). After that, pushing to `main` deploys automatically.
-
-## Development
-
-```bash
-python -m venv .venv
-.venv/Scripts/python -m pip install -e ".[dev]"
-.venv/Scripts/python -m pytest -q
-```
-
-Tests run against an in-memory SQLite database and mock all network calls. To run the bot outside Docker, set `DATABASE_URL` to a PostgreSQL instance, run `alembic upgrade head`, then `python -m bot`.
 
 ## License
 
