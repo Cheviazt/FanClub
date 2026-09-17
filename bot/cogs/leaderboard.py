@@ -1,14 +1,16 @@
 import asyncio
 import io
+import logging
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot.cogs.common import error_embed, image_embed
+from bot.cogs.common import error_embed, image_embed, send_error
 from bot.render.leaderboard import render_leaderboard
 from bot.services.leaderboard import LEADERBOARD_TYPES, fetch_page
 
+log = logging.getLogger(__name__)
 FILENAME = "leaderboard.png"
 TITLES = {"level": "Leaderboard · Level", "rating": "Leaderboard · Rating", "solved": "Leaderboard · Solved", "streaks": "Leaderboard · Streaks"}
 
@@ -54,6 +56,13 @@ class LeaderboardView(discord.ui.View):
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         self.page = min(self.total_pages, self.page + 1)
         await self._show(interaction)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
+        log.exception("leaderboard view failed", exc_info=error)
+        try:
+            await send_error(interaction, "Something went wrong. Try again later.")
+        except discord.HTTPException:
+            pass
 
     async def on_timeout(self) -> None:
         for item in self.children:

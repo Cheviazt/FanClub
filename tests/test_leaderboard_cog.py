@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import AsyncMock, MagicMock
 
 from bot.cogs.leaderboard import LeaderboardView
@@ -40,3 +41,15 @@ async def test_interaction_check_rejects_others(session_factory):
     interaction.response.send_message.assert_awaited_once()
     interaction.user.id = 1
     assert await view.interaction_check(interaction) is True
+
+
+async def test_view_on_error_sends_ephemeral_error(session_factory, caplog):
+    view = LeaderboardView(session_factory, "level", owner_id=1, page=1, total_pages=1)
+    interaction = MagicMock()
+    interaction.response.is_done = MagicMock(return_value=False)
+    interaction.response.send_message = AsyncMock()
+    with caplog.at_level(logging.ERROR, logger="bot.cogs.leaderboard"):
+        await view.on_error(interaction, RuntimeError("boom"), view.next)
+    interaction.response.send_message.assert_awaited_once()
+    assert interaction.response.send_message.await_args.kwargs["ephemeral"] is True
+    assert "leaderboard view failed" in caplog.text and "boom" in caplog.text

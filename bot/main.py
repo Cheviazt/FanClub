@@ -1,13 +1,16 @@
-import asyncio
 import logging
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from bot.cf.client import CodeforcesClient
+from bot.cogs.common import send_error
 from bot.config import Settings
 from bot.db.session import make_engine, make_session_factory
 from bot.services.register import RegisterService
+
+log = logging.getLogger(__name__)
 
 EXTENSIONS = (
     "bot.cogs.register",
@@ -30,11 +33,19 @@ class FanClubBot(commands.Bot):
         self.register_service = RegisterService(self.cf)
 
     async def setup_hook(self) -> None:
+        self.tree.on_error = self.on_app_command_error
         for name in EXTENSIONS:
             await self.load_extension(name)
         guild = discord.Object(id=self.settings.guild_id)
         self.tree.copy_global_to(guild=guild)
         await self.tree.sync(guild=guild)
+
+    async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
+        log.exception("command failed", exc_info=error)
+        try:
+            await send_error(interaction, "Something went wrong. Try again later.")
+        except discord.HTTPException:
+            pass
 
     async def close(self) -> None:
         await self.cf.close()
