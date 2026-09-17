@@ -236,7 +236,7 @@ Semua template 974x650 RGB. Font JetBrains Mono: Regular, Medium, SemiBold, Bold
 sampai muat lebar box. Bila di `min_size` masih terlalu lebar, potong karakter dan tambahkan `…`.
 Berlaku untuk semua teks dinamis (judul soal, handle, tags).
 
-Warna rank CF: Newbie `#808080`, Pupil `#008000`, Specialist `#03A89E`, Expert `#0000FF`,
+Warna rank CF: Newbie `#808080`, Pupil `#008000`, Specialist `#03A89E`, Expert `#5C7CFF`,
 Candidate Master `#AA00AA`, Master dan International Master `#FF8C00`,
 Grandmaster, International Grandmaster, Legendary Grandmaster `#FF0000`, Unrated `#808080`.
 

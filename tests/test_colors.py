@@ -16,5 +16,5 @@ def test_cf_rank_color():
 def test_cf_rating_color():
     assert cf_rating_color(900) == "#808080"
     assert cf_rating_color(1200) == "#008000"
-    assert cf_rating_color(1600) == "#0000FF"
+    assert cf_rating_color(1600) == "#5C7CFF"
     assert cf_rating_color(None) == "#808080"

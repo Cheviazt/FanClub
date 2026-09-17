@@ -10,7 +10,7 @@ CF_RANK_COLORS: dict[str, str] = {
     "newbie": GRAY,
     "pupil": "#008000",
     "specialist": "#03A89E",
-    "expert": "#0000FF",
+    "expert": "#5C7CFF",
     "candidate master": "#AA00AA",
     "master": "#FF8C00",
     "international master": "#FF8C00",
@@ -23,7 +23,7 @@ CF_RATING_BANDS: tuple[tuple[int, str], ...] = (
     (1200, GRAY),
     (1400, "#008000"),
     (1600, "#03A89E"),
-    (1900, "#0000FF"),
+    (1900, "#5C7CFF"),
     (2100, "#AA00AA"),
     (2400, "#FF8C00"),
 )
