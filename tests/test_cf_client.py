@@ -121,3 +121,40 @@ async def test_gives_up_after_three_attempts():
     with pytest.raises(CodeforcesError):
         await client.problemset_problems()
     await client.close()
+
+
+@respx.mock
+async def test_html_then_json_succeeds_on_second_attempt():
+    route = respx.get(f"{BASE}/user.info")
+    route.side_effect = [
+        httpx.Response(200, text="<html>maintenance</html>"),
+        httpx.Response(200, json={"status": "OK", "result": [{"handle": "nb", "lastOnlineTimeSeconds": 1, "titlePhoto": "https://a/b.png"}]}),
+    ]
+    client = make_client()
+    infos = await client.user_info(["nb"])
+    assert infos[0].handle == "nb" and route.call_count == 2
+    await client.close()
+
+
+@respx.mock
+async def test_html_three_times_raises_invalid_json():
+    route = respx.get(f"{BASE}/user.info").mock(return_value=httpx.Response(200, text="<html>maintenance</html>"))
+    client = make_client()
+    with pytest.raises(CodeforcesError, match="invalid JSON response"):
+        await client.user_info(["nb"])
+    assert route.call_count == 3
+    await client.close()
+
+
+@respx.mock
+async def test_retries_on_403_and_429():
+    route = respx.get(f"{BASE}/user.info")
+    route.side_effect = [
+        httpx.Response(403, text="<html>forbidden</html>"),
+        httpx.Response(429, text="<html>slow down</html>"),
+        httpx.Response(200, json={"status": "OK", "result": [{"handle": "nb", "lastOnlineTimeSeconds": 1, "titlePhoto": "https://a/b.png"}]}),
+    ]
+    client = make_client()
+    infos = await client.user_info(["nb"])
+    assert infos[0].handle == "nb" and route.call_count == 3
+    await client.close()

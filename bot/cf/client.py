@@ -9,6 +9,7 @@ from bot.cf.models import Problem, Submission, UserInfo, problem_from_api, submi
 
 BASE_URL = "https://codeforces.com/api"
 MAX_ATTEMPTS = 3
+RETRY_STATUSES = frozenset({403, 429})
 
 
 class CodeforcesError(Exception):
@@ -48,11 +49,16 @@ class CodeforcesClient:
                     last_error = exc
                     await self._sleep(2**attempt)
                     continue
-                if response.status_code >= 500:
+                if response.status_code >= 500 or response.status_code in RETRY_STATUSES:
                     last_error = CodeforcesError(f"HTTP {response.status_code}")
                     await self._sleep(2**attempt)
                     continue
-                payload = response.json()
+                try:
+                    payload = response.json()
+                except ValueError:
+                    last_error = CodeforcesError("invalid JSON response")
+                    await self._sleep(2**attempt)
+                    continue
                 if payload.get("status") != "OK":
                     raise CodeforcesError(payload.get("comment", "unknown error"))
                 return payload["result"]
