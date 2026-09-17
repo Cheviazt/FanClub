@@ -33,7 +33,7 @@ class FanClubBot(commands.Bot):
     def __init__(self, settings: Settings) -> None:
         intents = discord.Intents.default()
         intents.members = True
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="!", intents=intents, allowed_mentions=discord.AllowedMentions.none())
         self.settings = settings
         self.engine = make_engine(settings.database_url)
         self.session_factory = make_session_factory(self.engine)
@@ -50,9 +50,15 @@ class FanClubBot(commands.Bot):
         await self.tree.sync(guild=guild)
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
-        log.exception("command failed", exc_info=error)
+        if isinstance(error, app_commands.CommandOnCooldown):
+            message = f"Slow down. Try again in {error.retry_after:.0f} seconds."
+        elif isinstance(error, app_commands.CheckFailure):
+            message = "You cannot use this command here."
+        else:
+            log.exception("command failed", exc_info=error)
+            message = "Something went wrong. Try again later."
         try:
-            await send_error(interaction, "Something went wrong. Try again later.")
+            await send_error(interaction, message)
         except discord.HTTPException:
             pass
 

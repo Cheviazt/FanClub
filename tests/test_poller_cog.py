@@ -142,3 +142,24 @@ async def test_apply_side_effects_warns_when_channel_missing(caplog):
         await cog.apply_side_effects(r)
 
     assert "notify channel 555 not found" in caplog.text
+
+
+async def test_apply_batch_side_effects_sends_one_summary():
+    bot = MagicMock()
+    bot.settings.guild_id = 10
+    bot.settings.notify_channel_id = 555
+    bot.get_guild = MagicMock(return_value=None)
+    channel = MagicMock()
+    channel.send = AsyncMock()
+    bot.get_channel = MagicMock(return_value=channel)
+    cog = PollerCog.__new__(PollerCog)
+    cog.bot = bot
+    cog.role_ids = {}
+    results = [
+        SolveResult(1, "h", Problem(i, "A", "x", 900, ()), 90, Decimal("4.50"), 1, 1, "Rookie", "Rookie", 1)
+        for i in range(1, 8)
+    ]
+    await cog.apply_batch_side_effects(results)
+    channel.send.assert_awaited_once()
+    text = channel.send.await_args.args[0]
+    assert "solved 7 problems" in text and "+630 EXP" in text and "+$31.50" in text

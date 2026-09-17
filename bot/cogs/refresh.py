@@ -15,6 +15,7 @@ from bot.services.solve_processor import process_user
 from bot.services.streak import today_wib
 
 COOLDOWN_SECONDS = 60.0
+MAX_INDIVIDUAL_NOTICES = 5
 
 
 @dataclass(frozen=True)
@@ -50,8 +51,11 @@ async def refresh_user(bot, discord_id: int, today: date) -> RefreshReport | Non
         user = await users.get_by_discord(session, discord_id)
         exp = user.exp
     poller = bot.get_cog("PollerCog")
-    for result in results:
-        await poller.apply_side_effects(result)
+    if len(results) > MAX_INDIVIDUAL_NOTICES:
+        await poller.apply_batch_side_effects(results)
+    else:
+        for result in results:
+            await poller.apply_side_effects(result)
     level = level_for(exp)
     guild = bot.get_guild(bot.settings.guild_id)
     member = guild.get_member(discord_id) if guild is not None else None

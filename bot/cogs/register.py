@@ -62,6 +62,7 @@ class RegisterCog(commands.Cog):
         self.bot = bot
 
     @app_commands.guild_only()
+    @app_commands.checks.cooldown(1, 10.0, key=lambda i: i.user.id)
     @app_commands.command(name="register", description="Link your Codeforces handle to this Discord account")
     @app_commands.describe(handle="Your Codeforces handle")
     async def register(self, interaction: discord.Interaction, handle: str) -> None:
@@ -76,11 +77,12 @@ class RegisterCog(commands.Cog):
             if await users.get_by_handle(session, handle) is not None:
                 await send_error(interaction, f"Handle **{handle}** is already linked to another Discord account.")
                 return
-            problems = await problemset.list_problems(session)
-        if not problems:
-            await send_error(interaction, "Problem list is not ready yet. Try again in a minute.")
-            return
+            if await problemset.count_problems(session) == 0:
+                await send_error(interaction, "Problem list is not ready yet. Try again in a minute.")
+                return
         await interaction.response.defer(ephemeral=True)
+        async with bot.session_factory() as session:
+            problems = await problemset.list_problems(session)
         try:
             info = (await bot.cf.user_info([handle]))[0]
         except CodeforcesError as exc:

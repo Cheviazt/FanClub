@@ -27,6 +27,7 @@ class GrindingCog(commands.Cog):
         self.bot = bot
 
     @app_commands.guild_only()
+    @app_commands.checks.cooldown(1, 5.0, key=lambda i: i.user.id)
     @app_commands.command(name="grinding", description="Random unsolved problems by rating and tags")
     @app_commands.describe(
         count="How many problems (1 to 4)",

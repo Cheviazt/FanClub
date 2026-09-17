@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import io
 import logging
+from decimal import Decimal
 
 import discord
 from discord.ext import commands, tasks
@@ -54,26 +55,63 @@ class PollerCog(commands.Cog):
     def _guild(self) -> discord.Guild | None:
         return self.bot.get_guild(self.bot.settings.guild_id)
 
-    async def apply_side_effects(self, result: SolveResult) -> None:
+    async def sync_member(self, result: SolveResult) -> None:
         guild = self._guild()
-        if guild is not None:
-            member = guild.get_member(result.discord_id)
-            if member is not None:
-                if result.new_level != result.old_level:
-                    await set_level_nickname(member, result.new_level, result.handle)
-                if result.new_rank != result.old_rank:
-                    if not self.role_ids:
-                        async with self.bot.session_factory() as session:
-                            self.role_ids = await ensure_rank_roles(guild, session)
-                    await apply_rank(member, result.new_rank, self.role_ids)
+        if guild is None:
+            return
+        member = guild.get_member(result.discord_id)
+        if member is None:
+            return
+        if result.new_level != result.old_level:
+            await set_level_nickname(member, result.new_level, result.handle)
+        if result.new_rank != result.old_rank:
+            if not self.role_ids:
+                async with self.bot.session_factory() as session:
+                    self.role_ids = await ensure_rank_roles(guild, session)
+            await apply_rank(member, result.new_rank, self.role_ids)
+
+    def _notify_channel(self):
         channel = self.bot.get_channel(self.bot.settings.notify_channel_id)
         if channel is None:
             log.warning("notify channel %s not found", self.bot.settings.notify_channel_id)
+        return channel
+
+    async def apply_side_effects(self, result: SolveResult) -> None:
+        await self.sync_member(result)
+        channel = self._notify_channel()
+        if channel is None:
             return
         png = await asyncio.to_thread(render_accepted, accepted_data(result))
         file = discord.File(io.BytesIO(png), filename="accepted.png")
         try:
-            await channel.send(content=f"<@{result.discord_id}>", file=file, view=accepted_view(result))
+            await channel.send(content=f"<@{result.discord_id}>", file=file, view=accepted_view(result), allowed_mentions=discord.AllowedMentions(users=True))
+        except discord.HTTPException as exc:
+            log.warning("notification failed: %s", exc)
+
+    async def apply_batch_side_effects(self, results: list[SolveResult]) -> None:
+        if not results:
+            return
+        last = results[-1]
+        await self.sync_member(SolveResult(
+            discord_id=last.discord_id,
+            handle=last.handle,
+            problem=last.problem,
+            exp_gained=sum(r.exp_gained for r in results),
+            money_gained=sum((r.money_gained for r in results), Decimal("0.00")),
+            old_level=results[0].old_level,
+            new_level=last.new_level,
+            old_rank=results[0].old_rank,
+            new_rank=last.new_rank,
+            streak=last.streak,
+        ))
+        channel = self._notify_channel()
+        if channel is None:
+            return
+        exp = sum(r.exp_gained for r in results)
+        money = sum((r.money_gained for r in results), Decimal("0.00"))
+        text = f"<@{last.discord_id}> **{last.handle}** solved {len(results)} problems in one sync: +{exp} EXP, +${money:.2f}."
+        try:
+            await channel.send(text, allowed_mentions=discord.AllowedMentions(users=True))
         except discord.HTTPException as exc:
             log.warning("notification failed: %s", exc)
 

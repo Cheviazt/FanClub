@@ -78,6 +78,7 @@ class LeaderboardCog(commands.Cog):
         self.bot = bot
 
     @app_commands.guild_only()
+    @app_commands.checks.cooldown(1, 5.0, key=lambda i: i.user.id)
     @app_commands.command(name="leaderboard", description="Show the server leaderboard")
     @app_commands.describe(type="Which leaderboard to show")
     @app_commands.choices(type=[app_commands.Choice(name=t, value=t) for t in LEADERBOARD_TYPES])

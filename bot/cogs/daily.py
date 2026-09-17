@@ -27,6 +27,7 @@ class DailyCog(commands.Cog):
         self.bot = bot
 
     @app_commands.guild_only()
+    @app_commands.checks.cooldown(1, 5.0, key=lambda i: i.user.id)
     @app_commands.command(name="daily", description="Your three daily problems (900, 1200, 1600)")
     async def daily(self, interaction: discord.Interaction) -> None:
         async with self.bot.session_factory() as session:
