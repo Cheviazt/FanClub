@@ -8,22 +8,23 @@ import discord
 
 from bot.cf.client import CodeforcesError
 from bot.cf.models import Problem, UserInfo
-from bot.cogs.poller import PollerCog, format_solve_notification
+from bot.cogs.poller import PollerCog, accepted_data, accepted_view
 from bot.db.repo import cf_cache, users
 from bot.services.solve_processor import SolveResult
 
 
-def test_format_solve_notification():
-    r = SolveResult(1, "tourist", Problem(1842, "B", "Tenzing", 900, ()), 90, Decimal("4.50"), 1, 1, "Rookie", "Rookie", 3)
-    text = format_solve_notification(r)
-    assert "**tourist**" in text and "[1842B - Tenzing](https://codeforces.com/problemset/problem/1842/B)" in text
-    assert "rating 900" in text and "+90 EXP" in text and "+$4.50" in text
+def test_accepted_data_maps_result():
+    r = SolveResult(1, "tourist", Problem(1842, "B", "Tenzing", 900, ()), 90, Decimal("4.50"), 1, 2, "Rookie", "Elite", 3)
+    data = accepted_data(r)
+    assert data.handle == "tourist" and data.rank_name == "Elite" and data.level == 2 and data.streak == 3
+    assert data.exp_gained == 90 and data.money_gained == Decimal("4.50") and data.problem.code == "1842B"
 
 
-def test_format_unrated_notification():
+async def test_accepted_view_links_to_problem():
     r = SolveResult(1, "h", Problem(1, "A", "x", None, ()), 0, Decimal("0.00"), 1, 1, "Rookie", "Rookie", 1)
-    text = format_solve_notification(r)
-    assert "(unrated)" in text and "+0 EXP" in text and "+$0.00" in text
+    view = accepted_view(r)
+    button = view.children[0]
+    assert button.label == "Open 1A" and button.url == "https://codeforces.com/problemset/problem/1/A"
 
 
 async def test_reset_broken_streaks(session_factory):
@@ -75,12 +76,6 @@ async def test_wait_ready_serializes_role_creation(session_factory):
 
     assert guild.create_role.await_count == 8
     assert len(cog.role_ids) == 8
-
-
-def test_format_solve_notification_escapes_link_label():
-    r = SolveResult(1, "h", Problem(1, "A", "f(x) [hard]", 900, ()), 90, Decimal("4.50"), 1, 1, "Rookie", "Rookie", 1)
-    text = format_solve_notification(r)
-    assert "[1A - f(x\\) [hard\\]](https://codeforces.com/problemset/problem/1/A)" in text
 
 
 async def test_wait_ready_survives_role_setup_failure(session_factory):

@@ -7,11 +7,11 @@ from bot.render.fonts import ASSETS_DIR
 from bot.render.text import Box, fit_text
 from bot.services.leaderboard import LeaderboardRow
 
-ROWS: tuple[tuple[int, int], ...] = ((204, 244), (249, 288), (293, 332), (337, 377), (381, 421), (426, 465), (470, 509))
-COL_NO: tuple[int, int] = (190, 240)
-COL_USERNAME: tuple[int, int] = (324, 624)
-COL_VALUE: tuple[int, int] = (650, 750)
-PAGE_PILL: Box = (448, 581, 526, 621)
+ROWS: tuple[tuple[int, int], ...] = ((205, 250), (256, 302), (308, 353), (360, 405), (411, 457), (463, 508), (515, 560))
+COL_NO: tuple[int, int] = (137, 197)
+COL_USERNAME: tuple[int, int] = (297, 640)
+COL_VALUE: tuple[int, int] = (661, 811)
+PAGE_PILL: Box = (449, 565, 524, 604)
 
 
 def render_leaderboard(kind: str, rows: list[LeaderboardRow], page: int, total_pages: int) -> bytes:

@@ -27,3 +27,14 @@ def test_render_daily():
         Problem(1, "A", "Theatre Square", 1600, ()),
     ]
     assert Image.open(io.BytesIO(render_daily(problems))).size == (974, 650)
+
+
+def test_render_accepted():
+    from decimal import Decimal
+
+    from bot.render.accepted import AcceptedData, render_accepted
+
+    data = AcceptedData("cheviazt", "Rookie", Problem(1842, "B", "Tenzing and Books", 900, ("math", "greedy")), 90, Decimal("4.50"), 3, 5)
+    assert Image.open(io.BytesIO(render_accepted(data))).size == (974, 650)
+    unrated = AcceptedData("h", "Elite", Problem(1, "A", "x", None, ()), 0, Decimal("0.00"), 1, 0)
+    assert Image.open(io.BytesIO(render_accepted(unrated))).size == (974, 650)

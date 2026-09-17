@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import io
 import logging
 
 import discord
@@ -9,6 +10,7 @@ from bot.cf.client import CodeforcesError
 from bot.cf.models import UserInfo
 from bot.config import WIB
 from bot.db.repo import cf_cache, problemset, users
+from bot.render.accepted import AcceptedData, render_accepted
 from bot.services.roles import apply_rank, ensure_rank_roles, set_level_nickname
 from bot.services.solve_processor import SolveResult, process_user
 from bot.services.streak import is_broken, today_wib
@@ -17,11 +19,22 @@ log = logging.getLogger(__name__)
 INFO_BATCH = 100
 
 
-def format_solve_notification(result: SolveResult) -> str:
-    p = result.problem
-    name = p.name.replace("]", "\\]").replace(")", "\\)")
-    rating = "(unrated)" if p.rating is None else f"(rating {p.rating})"
-    return f"**{result.handle}** solved [{p.code} - {name}]({p.url}) {rating} | +{result.exp_gained} EXP | +${result.money_gained:.2f}"
+def accepted_data(result: SolveResult) -> AcceptedData:
+    return AcceptedData(
+        handle=result.handle,
+        rank_name=result.new_rank,
+        problem=result.problem,
+        exp_gained=result.exp_gained,
+        money_gained=result.money_gained,
+        level=result.new_level,
+        streak=result.streak,
+    )
+
+
+def accepted_view(result: SolveResult) -> discord.ui.View:
+    view = discord.ui.View()
+    view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label=f"Open {result.problem.code}", url=result.problem.url))
+    return view
 
 
 class PollerCog(commands.Cog):
@@ -59,8 +72,10 @@ class PollerCog(commands.Cog):
         if channel is None:
             log.warning("notify channel %s not found", self.bot.settings.notify_channel_id)
             return
+        png = await asyncio.to_thread(render_accepted, accepted_data(result))
+        file = discord.File(io.BytesIO(png), filename="accepted.png")
         try:
-            await channel.send(format_solve_notification(result))
+            await channel.send(content=f"<@{result.discord_id}>", file=file, view=accepted_view(result))
         except discord.HTTPException as exc:
             log.warning("notification failed: %s", exc)
 
