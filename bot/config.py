@@ -15,3 +15,5 @@ class Settings(BaseSettings):
     tz: str = "Asia/Jakarta"
     log_level: str = "INFO"
     data_dir: str = "data"
+    reminder_channel_id: int | None = None
+    contest_channel_id: int | None = None

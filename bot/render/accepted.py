@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 from bot.cf.models import Problem
 from bot.render.colors import DISCORD_RANK_COLORS, GRAY, MUTED, WHITE
 from bot.render.fonts import ASSETS_DIR, get_font
-from bot.render.text import Box, fit_text, truncate
+from bot.render.text import Box, fit_text, truncate, wrap_lines
 
 TEMPLATE = ASSETS_DIR / "acc.png"
 REFERENCE_WIDTH = 450
@@ -15,8 +15,8 @@ SLOT_HANDLE: Box = (62, 70, 387, 104)
 SLOT_PROBLEM: Box = (62, 106, 387, 129)
 SLOT_EXP: Box = (85, 132, 222, 161)
 SLOT_MONEY: Box = (228, 132, 365, 161)
-SLOT_TAGS: Box = (66, 164, 383, 178)
-SLOT_FOOTER: Box = (62, 180, 387, 199)
+SLOT_TAGS: Box = (66, 166, 383, 198)
+TAGS_LINES = 2
 GOLD = "#FFD54F"
 GREEN = "#66BB6A"
 
@@ -37,8 +37,6 @@ class AcceptedData:
     problem: Problem
     exp_gained: int
     money_gained: Decimal
-    level: int
-    streak: int
 
 
 def render_accepted(data: AcceptedData) -> bytes:
@@ -53,9 +51,10 @@ def render_accepted(data: AcceptedData) -> bytes:
     tags_font = get_font("Regular", size(12, scale))
     tags = " · ".join(problem.tags) if problem.tags else "no tags"
     x0, y0, x1, y1 = scaled(SLOT_TAGS, scale)
-    draw.text(((x0 + x1) / 2, (y0 + y1) / 2), truncate(tags_font, tags, x1 - x0), font=tags_font, fill=MUTED, anchor="mm")
-    footer = f"Level {data.level} · {data.rank_name} · streak {data.streak}"
-    fit_text(draw, footer, scaled(SLOT_FOOTER, scale), "Medium", size(15, scale), size(9, scale), MUTED)
+    lines = wrap_lines(tags_font, tags, x1 - x0, TAGS_LINES, separator=" · ")
+    line_height = (y1 - y0) / TAGS_LINES
+    for i, line in enumerate(lines):
+        draw.text(((x0 + x1) / 2, y0 + line_height * (i + 0.5)), line, font=tags_font, fill=MUTED, anchor="mm")
     buf = io.BytesIO()
     base.save(buf, "PNG")
     return buf.getvalue()

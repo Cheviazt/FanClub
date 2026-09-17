@@ -28,3 +28,14 @@ def test_fit_text_draws_without_error():
     fit_text(draw, "x" * 80, (0, 0, 300, 60), "Bold", 30, 12, "#FFFFFF")
     fit_text(draw, "short", (0, 0, 300, 60), "Bold", 30, 12, "#FFFFFF", align="left")
     assert im.getbbox() is not None
+
+
+def test_wrap_lines_splits_and_caps():
+    from bot.render.text import wrap_lines
+
+    font = get_font("Regular", 16)
+    tags = " · ".join(["bitmasks", "greedy", "math", "constructive algorithms", "implementation", "dp", "graphs"])
+    lines = wrap_lines(font, tags, 300, 2, separator=" · ")
+    assert 1 <= len(lines) <= 2
+    assert all(font.getlength(line) <= 300 for line in lines)
+    assert wrap_lines(font, "short", 300, 2) == ["short"]

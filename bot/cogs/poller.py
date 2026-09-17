@@ -26,8 +26,6 @@ def accepted_data(result: SolveResult) -> AcceptedData:
         problem=result.problem,
         exp_gained=result.exp_gained,
         money_gained=result.money_gained,
-        level=result.new_level,
-        streak=result.streak,
     )
 
 

@@ -80,7 +80,7 @@ class RegisterCog(commands.Cog):
         if not problems:
             await send_error(interaction, "Problem list is not ready yet. Try again in a minute.")
             return
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         try:
             info = (await bot.cf.user_info([handle]))[0]
         except CodeforcesError as exc:

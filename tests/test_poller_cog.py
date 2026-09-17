@@ -16,7 +16,7 @@ from bot.services.solve_processor import SolveResult
 def test_accepted_data_maps_result():
     r = SolveResult(1, "tourist", Problem(1842, "B", "Tenzing", 900, ()), 90, Decimal("4.50"), 1, 2, "Rookie", "Elite", 3)
     data = accepted_data(r)
-    assert data.handle == "tourist" and data.rank_name == "Elite" and data.level == 2 and data.streak == 3
+    assert data.handle == "tourist" and data.rank_name == "Elite"
     assert data.exp_gained == 90 and data.money_gained == Decimal("4.50") and data.problem.code == "1842B"
 
 

@@ -55,3 +55,22 @@ def fit_text(
     if strike and shown:
         thickness = max(2, font.size // 12)
         draw.line((start, cy, start + shown_width, cy), fill=fill, width=thickness)
+
+
+def wrap_lines(font: ImageFont.FreeTypeFont, text: str, max_width: float, max_lines: int, separator: str = " ") -> list[str]:
+    words = text.split(separator)
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        candidate = word if not current else current + separator + word
+        if font.getlength(candidate) <= max_width or not current:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    if len(lines) > max_lines:
+        rest = separator.join(lines[max_lines - 1:])
+        lines = lines[: max_lines - 1] + [rest]
+    return [truncate(font, line, max_width) for line in lines]
