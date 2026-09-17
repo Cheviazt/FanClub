@@ -72,3 +72,12 @@ class ProblemsetCache(Base):
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     tags: Mapped[list] = mapped_column(JSON, default=list)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ContestNotice(Base):
+    __tablename__ = "contest_notices"
+
+    platform: Mapped[str] = mapped_column(String(32), primary_key=True)
+    contest_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    announced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

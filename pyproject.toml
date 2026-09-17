@@ -32,5 +32,6 @@ include = ["bot*"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = [
+    "ignore:'count' is passed as positional argument:DeprecationWarning:discord.utils",
     'ignore:Dialect sqlite\+pysqlite does \*not\* support Decimal objects natively:sqlalchemy.exc.SAWarning',
 ]

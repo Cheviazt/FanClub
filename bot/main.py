@@ -22,6 +22,9 @@ EXTENSIONS = (
     "bot.cogs.refresh",
     "bot.cogs.grinding",
     "bot.cogs.unregister",
+    "bot.cogs.help",
+    "bot.cogs.contests",
+    "bot.cogs.reminder",
     "bot.cogs.poller",
 )
 

@@ -83,6 +83,19 @@ class CodeforcesClient:
         problems = (problem_from_api(item) for item in result["problems"])
         return [p for p in problems if p is not None]
 
+    async def contest_list(self) -> list[dict]:
+        return await self._get("contest.list", gym="false")
+
+    async def fetch_json(self, url: str) -> Any:
+        response = await self._http.get(url, follow_redirects=True, headers=BROWSER_HEADERS)
+        response.raise_for_status()
+        return response.json()
+
+    async def fetch_text(self, url: str) -> str:
+        response = await self._http.get(url, follow_redirects=True, headers=BROWSER_HEADERS)
+        response.raise_for_status()
+        return response.text
+
     async def fetch_bytes(self, url: str) -> bytes:
         response = await self._http.get(url, follow_redirects=True, headers=BROWSER_HEADERS)
         for attempt in range(1, MAX_ATTEMPTS):
