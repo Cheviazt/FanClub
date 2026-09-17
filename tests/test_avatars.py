@@ -93,3 +93,25 @@ def test_fit_text_strike_draws_line():
     im = Image.new("RGB", (300, 60))
     fit_text(ImageDraw.Draw(im), "done", (0, 0, 300, 60), "SemiBold", 26, 14, "#FFFFFF", align="left", strike=True)
     assert im.getpixel((5, 30)) == (255, 255, 255)
+
+
+def test_avatar_candidates_adds_codeforces_mirror():
+    from bot.services.avatars import avatar_candidates
+
+    assert avatar_candidates("") == []
+    assert avatar_candidates("https://cdn/x.png") == ["https://cdn/x.png"]
+    assert avatar_candidates("https://userpic.codeforces.org/1/title/a.jpg") == [
+        "https://userpic.codeforces.org/1/title/a.jpg",
+        "https://codeforces.com/userpic.codeforces.org/1/title/a.jpg",
+    ]
+
+
+@respx.mock
+async def test_fetch_avatar_uses_mirror_when_cdn_fails(tmp_path):
+    respx.get("https://userpic.codeforces.org/1/title/a.jpg").mock(return_value=httpx.Response(503, text="busy"))
+    respx.get("https://codeforces.com/userpic.codeforces.org/1/title/a.jpg").mock(return_value=httpx.Response(200, content=b"mirror"))
+    cache = AvatarCache(tmp_path / "avatars")
+    client = make_client()
+    assert await fetch_avatar(client, cache, 1, "https://userpic.codeforces.org/1/title/a.jpg", "https://cdn.discordapp.com/x.png") == b"mirror"
+    assert cache.load(1) == b"mirror"
+    await client.close()

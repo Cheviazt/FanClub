@@ -22,15 +22,27 @@ class AvatarCache:
         self._path(discord_id).write_bytes(data)
 
 
+USERPIC_HOST = "https://userpic.codeforces.org/"
+MIRROR_PREFIX = "https://codeforces.com/userpic.codeforces.org/"
+
+
+def avatar_candidates(url: str) -> list[str]:
+    if not url:
+        return []
+    if url.startswith(USERPIC_HOST):
+        return [url, MIRROR_PREFIX + url[len(USERPIC_HOST):]]
+    return [url]
+
+
 async def fetch_avatar(client, cache: AvatarCache, discord_id: int, url: str, fallback_url: str = "") -> bytes | None:
-    if url:
+    for candidate in avatar_candidates(url):
         try:
-            data = await client.fetch_bytes(url)
+            data = await client.fetch_bytes(candidate)
         except Exception as exc:
             log.warning("avatar fetch failed for %s: %s", discord_id, exc)
-        else:
-            cache.store(discord_id, data)
-            return data
+            continue
+        cache.store(discord_id, data)
+        return data
     cached = cache.load(discord_id)
     if cached is not None or not fallback_url:
         return cached
