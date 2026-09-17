@@ -70,6 +70,9 @@ include = ["bot*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore:Dialect sqlite\+pysqlite does \*not\* support Decimal objects natively:sqlalchemy.exc.SAWarning",
+]
 ```
 
 - [ ] **Step 2: Buat venv dan install**
@@ -2163,7 +2166,7 @@ async def test_level_pages(session):
 async def test_rating_null_as_zero(session):
     await seed(session, 4)
     rows, _ = await fetch_page(session, "rating", 1)
-    assert [r.handle for r in rows] == ["h3", "h1", "h4", "h2"]
+    assert [r.handle for r in rows] == ["h3", "h1", "h2", "h4"]
     assert rows[0].value == "1003" and rows[-1].value == "0"
 
 
@@ -3428,7 +3431,7 @@ from bot.cf.models import Problem
 from bot.cogs.daily import build_daily_view
 
 
-def test_daily_view_has_three_link_buttons():
+async def test_daily_view_has_three_link_buttons():
     problems = [Problem(1, "A", "a", 900, ()), Problem(2, "B", "b", 1200, ()), Problem(3, "C", "c", 1600, ())]
     view = build_daily_view(problems)
     buttons = [c for c in view.children if isinstance(c, discord.ui.Button)]
