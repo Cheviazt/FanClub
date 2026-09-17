@@ -5,6 +5,8 @@ import logging
 import discord
 from discord.ext import commands, tasks
 
+from bot.cf.client import CodeforcesError
+from bot.cf.models import UserInfo
 from bot.config import WIB
 from bot.db.repo import cf_cache, problemset, users
 from bot.services.roles import apply_rank, ensure_rank_roles, set_level_nickname
@@ -17,8 +19,9 @@ INFO_BATCH = 100
 
 def format_solve_notification(result: SolveResult) -> str:
     p = result.problem
+    name = p.name.replace("]", "\\]").replace(")", "\\)")
     rating = "(unrated)" if p.rating is None else f"(rating {p.rating})"
-    return f"**{result.handle}** solved [{p.code} - {p.name}]({p.url}) {rating} | +{result.exp_gained} EXP | +${result.money_gained:.2f}"
+    return f"**{result.handle}** solved [{p.code} - {name}]({p.url}) {rating} | +{result.exp_gained} EXP | +${result.money_gained:.2f}"
 
 
 class PollerCog(commands.Cog):
@@ -53,11 +56,13 @@ class PollerCog(commands.Cog):
                             self.role_ids = await ensure_rank_roles(guild, session)
                     await apply_rank(member, result.new_rank, self.role_ids)
         channel = self.bot.get_channel(self.bot.settings.notify_channel_id)
-        if channel is not None:
-            try:
-                await channel.send(format_solve_notification(result))
-            except discord.HTTPException as exc:
-                log.warning("notification failed: %s", exc)
+        if channel is None:
+            log.warning("notify channel %s not found", self.bot.settings.notify_channel_id)
+            return
+        try:
+            await channel.send(format_solve_notification(result))
+        except discord.HTTPException as exc:
+            log.warning("notification failed: %s", exc)
 
     async def poll_once(self) -> None:
         async with self.bot.session_factory() as session:
@@ -90,6 +95,15 @@ class PollerCog(commands.Cog):
         except Exception:
             log.exception("poll_solves failed")
 
+    async def _user_info_each(self, handles: list[str]) -> list[UserInfo]:
+        infos: list[UserInfo] = []
+        for handle in handles:
+            try:
+                infos.extend(await self.bot.cf.user_info([handle]))
+            except CodeforcesError as exc:
+                log.warning("user.info failed for %s: %s", handle, exc)
+        return infos
+
     @tasks.loop(minutes=10)
     async def refresh_cf_cache(self) -> None:
         try:
@@ -102,6 +116,8 @@ class PollerCog(commands.Cog):
                     chunk = handles[start:start + INFO_BATCH]
                     try:
                         infos = await self.bot.cf.user_info(chunk)
+                    except CodeforcesError:
+                        infos = await self._user_info_each(chunk)
                     except Exception:
                         log.exception("user.info refresh failed")
                         continue
@@ -142,11 +158,14 @@ class PollerCog(commands.Cog):
     @reset_streaks.before_loop
     async def wait_ready(self) -> None:
         await self.bot.wait_until_ready()
-        guild = self._guild()
         async with self._roles_lock:
-            if guild is not None and not self.role_ids:
-                async with self.bot.session_factory() as session:
-                    self.role_ids = await ensure_rank_roles(guild, session)
+            try:
+                guild = self._guild()
+                if guild is not None and not self.role_ids:
+                    async with self.bot.session_factory() as session:
+                        self.role_ids = await ensure_rank_roles(guild, session)
+            except Exception:
+                log.exception("rank role setup failed")
 
 
 async def setup(bot: commands.Bot) -> None:

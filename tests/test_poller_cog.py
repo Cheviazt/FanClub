@@ -1,11 +1,15 @@
 import asyncio
+import logging
 from datetime import date
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
-from bot.cf.models import Problem
+import discord
+
+from bot.cf.client import CodeforcesError
+from bot.cf.models import Problem, UserInfo
 from bot.cogs.poller import PollerCog, format_solve_notification
-from bot.db.repo import users
+from bot.db.repo import cf_cache, users
 from bot.services.solve_processor import SolveResult
 
 
@@ -71,3 +75,75 @@ async def test_wait_ready_serializes_role_creation(session_factory):
 
     assert guild.create_role.await_count == 8
     assert len(cog.role_ids) == 8
+
+
+def test_format_solve_notification_escapes_link_label():
+    r = SolveResult(1, "h", Problem(1, "A", "f(x) [hard]", 900, ()), 90, Decimal("4.50"), 1, 1, "Rookie", "Rookie", 1)
+    text = format_solve_notification(r)
+    assert "[1A - f(x\\) [hard\\]](https://codeforces.com/problemset/problem/1/A)" in text
+
+
+async def test_wait_ready_survives_role_setup_failure(session_factory):
+    bot = MagicMock()
+    bot.session_factory = session_factory
+    bot.settings.guild_id = 10
+    bot.wait_until_ready = AsyncMock()
+    guild = MagicMock()
+    guild.id = 10
+    guild.roles = []
+    guild.create_role = AsyncMock(side_effect=discord.Forbidden(MagicMock(status=403), "missing permissions"))
+    bot.get_guild = MagicMock(return_value=guild)
+
+    cog = PollerCog.__new__(PollerCog)
+    cog.bot = bot
+    cog.role_ids = {}
+    cog._roles_lock = asyncio.Lock()
+
+    await cog.wait_ready()
+
+    assert cog.role_ids == {}
+
+
+async def test_refresh_cf_cache_falls_back_per_handle(session_factory):
+    async with session_factory() as s:
+        await users.create_user(s, 1, "good")
+        await users.create_user(s, 2, "gone")
+        await s.commit()
+    good = UserInfo("good", 1500, 1600, "specialist", "expert", 1, "https://a/b.png")
+
+    async def fake_user_info(handles):
+        if len(handles) > 1:
+            raise CodeforcesError("handles: User with handle gone not found")
+        if handles == ["good"]:
+            return [good]
+        raise CodeforcesError("handles: User with handle gone not found")
+
+    bot = MagicMock()
+    bot.session_factory = session_factory
+    bot.cf.user_info = AsyncMock(side_effect=fake_user_info)
+    cog = PollerCog.__new__(PollerCog)
+    cog.bot = bot
+
+    await PollerCog.refresh_cf_cache.coro(cog)
+
+    assert bot.cf.user_info.await_count == 3
+    async with session_factory() as s:
+        assert (await cf_cache.get_cf_cache(s, 1)).rating == 1500
+        assert await cf_cache.get_cf_cache(s, 2) is None
+
+
+async def test_apply_side_effects_warns_when_channel_missing(caplog):
+    bot = MagicMock()
+    bot.settings.guild_id = 10
+    bot.settings.notify_channel_id = 555
+    bot.get_guild = MagicMock(return_value=None)
+    bot.get_channel = MagicMock(return_value=None)
+    cog = PollerCog.__new__(PollerCog)
+    cog.bot = bot
+    cog.role_ids = {}
+    r = SolveResult(1, "h", Problem(1, "A", "x", None, ()), 0, Decimal("0.00"), 1, 1, "Rookie", "Rookie", 1)
+
+    with caplog.at_level(logging.WARNING, logger="bot.cogs.poller"):
+        await cog.apply_side_effects(r)
+
+    assert "notify channel 555 not found" in caplog.text
