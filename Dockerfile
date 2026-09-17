@@ -15,5 +15,6 @@ COPY bot ./bot
 COPY assets ./assets
 COPY alembic ./alembic
 COPY alembic.ini ./
+RUN mkdir -p /app/data && chown app:app /app/data
 USER app
 CMD ["sh", "-c", "alembic upgrade head && python -m bot"]

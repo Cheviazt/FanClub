@@ -14,3 +14,4 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://bot:bot@db:5432/bot"
     tz: str = "Asia/Jakarta"
     log_level: str = "INFO"
+    data_dir: str = "data"

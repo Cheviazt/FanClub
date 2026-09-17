@@ -16,6 +16,8 @@ services:
   bot:
     build: .
     env_file: .env
+    volumes:
+      - botdata:/app/data
     depends_on:
       db:
         condition: service_healthy
@@ -23,3 +25,4 @@ services:
 
 volumes:
   pgdata:
+  botdata:

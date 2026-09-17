@@ -1,6 +1,5 @@
 import asyncio
 import io
-import logging
 from datetime import datetime, timezone
 
 import discord
@@ -8,14 +7,12 @@ from discord import app_commands
 from discord.ext import commands
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.cogs.common import image_embed, send_error
+from bot.cogs.common import send_error
 from bot.db.models import User
 from bot.db.repo import cf_cache, problemset, solved, users
 from bot.render.profile import ProfileData, format_last_seen, render_profile
+from bot.services.avatars import fetch_avatar
 from bot.services.leveling import exp_progress, level_for, rank_for
-
-log = logging.getLogger(__name__)
-
 
 async def build_profile_data(session: AsyncSession, user: User, avatar: bytes | None, now: datetime) -> ProfileData:
     cache = await cf_cache.get_cf_cache(session, user.discord_id)
@@ -65,18 +62,13 @@ class ProfileCog(commands.Cog):
                 return
             await interaction.response.defer()
             cache = await cf_cache.get_cf_cache(session, row.discord_id)
-            avatar: bytes | None = None
-            if cache and cache.avatar_url:
-                try:
-                    avatar = await self.bot.cf.fetch_bytes(cache.avatar_url)
-                except Exception as exc:
-                    log.warning("avatar fetch failed for %s: %s", row.handle, exc)
+            avatar = await fetch_avatar(self.bot.cf, self.bot.avatars, row.discord_id, cache.avatar_url if cache else "")
             data = await build_profile_data(session, row, avatar, datetime.now(timezone.utc))
         png = await asyncio.to_thread(render_profile, data)
         file = discord.File(io.BytesIO(png), filename="profile.png")
         view = discord.ui.View()
         view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="See Profile", url=f"https://codeforces.com/profile/{row.handle}"))
-        await interaction.followup.send(embed=image_embed(f"{row.handle}", "profile.png"), file=file, view=view)
+        await interaction.followup.send(file=file, view=view)
 
 
 async def setup(bot: commands.Bot) -> None:

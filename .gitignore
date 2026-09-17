@@ -8,3 +8,4 @@ dist/
 .superpowers/
 preview_*.png
 tmp_migrate.db
+data/

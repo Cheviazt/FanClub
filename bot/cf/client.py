@@ -10,6 +10,11 @@ from bot.cf.models import Problem, Submission, UserInfo, problem_from_api, submi
 BASE_URL = "https://codeforces.com/api"
 MAX_ATTEMPTS = 3
 RETRY_STATUSES = frozenset({403, 429})
+BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Referer": "https://codeforces.com/",
+    "Accept": "image/avif,image/webp,image/*,*/*;q=0.8",
+}
 
 
 class CodeforcesError(Exception):
@@ -79,6 +84,11 @@ class CodeforcesClient:
         return [p for p in problems if p is not None]
 
     async def fetch_bytes(self, url: str) -> bytes:
-        response = await self._http.get(url, follow_redirects=True)
+        response = await self._http.get(url, follow_redirects=True, headers=BROWSER_HEADERS)
+        for attempt in range(1, MAX_ATTEMPTS):
+            if response.status_code < 500:
+                break
+            await self._sleep(2 ** (attempt - 1))
+            response = await self._http.get(url, follow_redirects=True, headers=BROWSER_HEADERS)
         response.raise_for_status()
         return response.content

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import discord
 from discord import app_commands
@@ -8,6 +9,7 @@ from bot.cf.client import CodeforcesClient
 from bot.cogs.common import send_error
 from bot.config import Settings
 from bot.db.session import make_engine, make_session_factory
+from bot.services.avatars import AvatarCache
 from bot.services.register import RegisterService
 
 log = logging.getLogger(__name__)
@@ -31,6 +33,7 @@ class FanClubBot(commands.Bot):
         self.session_factory = make_session_factory(self.engine)
         self.cf = CodeforcesClient()
         self.register_service = RegisterService(self.cf)
+        self.avatars = AvatarCache(Path(settings.data_dir) / "avatars")
 
     async def setup_hook(self) -> None:
         self.tree.on_error = self.on_app_command_error

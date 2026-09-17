@@ -1,0 +1,71 @@
+import httpx
+import pytest
+import respx
+
+from bot.cf.client import CodeforcesClient
+from bot.services.avatars import AvatarCache, fetch_avatar
+
+
+async def no_sleep(_: float) -> None:
+    return None
+
+
+def make_client() -> CodeforcesClient:
+    return CodeforcesClient(http=httpx.AsyncClient(), min_interval=0, sleep=no_sleep)
+
+
+def test_cache_miss_returns_none(tmp_path):
+    cache = AvatarCache(tmp_path / "avatars")
+    assert cache.load(1) is None
+
+
+def test_cache_store_and_load(tmp_path):
+    cache = AvatarCache(tmp_path / "avatars")
+    cache.store(1, b"img")
+    assert cache.load(1) == b"img"
+    cache.store(1, b"new")
+    assert cache.load(1) == b"new"
+
+
+@respx.mock
+async def test_fetch_bytes_sends_browser_headers_and_retries():
+    route = respx.get("https://userpic.codeforces.org/a.jpg")
+    route.side_effect = [httpx.Response(503, text="busy"), httpx.Response(200, content=b"jpg")]
+    client = make_client()
+    data = await client.fetch_bytes("https://userpic.codeforces.org/a.jpg")
+    assert data == b"jpg" and route.call_count == 2
+    request = route.calls[0].request
+    assert "Mozilla" in request.headers["user-agent"]
+    assert request.headers["referer"] == "https://codeforces.com/"
+    await client.close()
+
+
+@respx.mock
+async def test_fetch_bytes_gives_up_after_three_attempts():
+    respx.get("https://userpic.codeforces.org/a.jpg").mock(return_value=httpx.Response(503, text="busy"))
+    client = make_client()
+    with pytest.raises(httpx.HTTPStatusError):
+        await client.fetch_bytes("https://userpic.codeforces.org/a.jpg")
+    await client.close()
+
+
+@respx.mock
+async def test_fetch_avatar_stores_on_success(tmp_path):
+    respx.get("https://userpic.codeforces.org/a.jpg").mock(return_value=httpx.Response(200, content=b"jpg"))
+    cache = AvatarCache(tmp_path / "avatars")
+    client = make_client()
+    assert await fetch_avatar(client, cache, 1, "https://userpic.codeforces.org/a.jpg") == b"jpg"
+    assert cache.load(1) == b"jpg"
+    await client.close()
+
+
+@respx.mock
+async def test_fetch_avatar_falls_back_to_cache(tmp_path):
+    respx.get("https://userpic.codeforces.org/a.jpg").mock(return_value=httpx.Response(503, text="busy"))
+    cache = AvatarCache(tmp_path / "avatars")
+    cache.store(1, b"old")
+    client = make_client()
+    assert await fetch_avatar(client, cache, 1, "https://userpic.codeforces.org/a.jpg") == b"old"
+    assert await fetch_avatar(client, cache, 2, "https://userpic.codeforces.org/a.jpg") is None
+    assert await fetch_avatar(client, cache, 3, "") is None
+    await client.close()
