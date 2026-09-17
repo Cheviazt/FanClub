@@ -1,6 +1,7 @@
+import asyncio
 from datetime import date
 from decimal import Decimal
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from bot.cf.models import Problem
 from bot.cogs.poller import PollerCog, format_solve_notification
@@ -38,3 +39,35 @@ async def test_reset_broken_streaks(session_factory):
     async with session_factory() as s:
         assert (await users.get_by_discord(s, 1)).streak == 0
         assert (await users.get_by_discord(s, 2)).streak == 2
+
+
+async def test_wait_ready_serializes_role_creation(session_factory):
+    bot = MagicMock()
+    bot.session_factory = session_factory
+    bot.settings.guild_id = 10
+    bot.wait_until_ready = AsyncMock()
+
+    guild = MagicMock()
+    guild.id = 10
+    guild.roles = []
+
+    async def _create_role(name, colour, reason):
+        await asyncio.sleep(0)
+        role = MagicMock()
+        role.id = len(guild.roles) + 1
+        role.name = name
+        guild.roles.append(role)
+        return role
+
+    guild.create_role = AsyncMock(side_effect=_create_role)
+    bot.get_guild = MagicMock(return_value=guild)
+
+    cog = PollerCog.__new__(PollerCog)
+    cog.bot = bot
+    cog.role_ids = {}
+    cog._roles_lock = asyncio.Lock()
+
+    await asyncio.gather(cog.wait_ready(), cog.wait_ready(), cog.wait_ready(), cog.wait_ready())
+
+    assert guild.create_role.await_count == 8
+    assert len(cog.role_ids) == 8

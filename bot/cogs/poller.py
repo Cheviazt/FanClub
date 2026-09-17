@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 import logging
 
@@ -24,6 +25,7 @@ class PollerCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.role_ids: dict[str, int] = {}
+        self._roles_lock = asyncio.Lock()
         self.poll_solves.start()
         self.refresh_cf_cache.start()
         self.refresh_problemset.start()
@@ -83,44 +85,56 @@ class PollerCog(commands.Cog):
 
     @tasks.loop(seconds=60)
     async def poll_solves(self) -> None:
-        await self.poll_once()
+        try:
+            await self.poll_once()
+        except Exception:
+            log.exception("poll_solves failed")
 
     @tasks.loop(minutes=10)
     async def refresh_cf_cache(self) -> None:
-        async with self.bot.session_factory() as session:
-            all_users = await users.list_users(session)
-            by_handle = {u.handle.lower(): u.discord_id for u in all_users}
-            handles = list(by_handle)
-            now = dt.datetime.now(dt.timezone.utc)
-            for start in range(0, len(handles), INFO_BATCH):
-                chunk = handles[start:start + INFO_BATCH]
-                try:
-                    infos = await self.bot.cf.user_info(chunk)
-                except Exception:
-                    log.exception("user.info refresh failed")
-                    continue
-                for info in infos:
-                    discord_id = by_handle.get(info.handle.lower())
-                    if discord_id is not None:
-                        await cf_cache.upsert_cf_cache(session, discord_id, info, now)
-            await session.commit()
+        try:
+            async with self.bot.session_factory() as session:
+                all_users = await users.list_users(session)
+                by_handle = {u.handle.lower(): u.discord_id for u in all_users}
+                handles = list(by_handle)
+                now = dt.datetime.now(dt.timezone.utc)
+                for start in range(0, len(handles), INFO_BATCH):
+                    chunk = handles[start:start + INFO_BATCH]
+                    try:
+                        infos = await self.bot.cf.user_info(chunk)
+                    except Exception:
+                        log.exception("user.info refresh failed")
+                        continue
+                    for info in infos:
+                        discord_id = by_handle.get(info.handle.lower())
+                        if discord_id is not None:
+                            await cf_cache.upsert_cf_cache(session, discord_id, info, now)
+                await session.commit()
+        except Exception:
+            log.exception("refresh_cf_cache failed")
 
     @tasks.loop(hours=6)
     async def refresh_problemset(self) -> None:
         try:
-            problems = await self.bot.cf.problemset_problems()
+            try:
+                problems = await self.bot.cf.problemset_problems()
+            except Exception:
+                log.exception("problemset refresh failed")
+                return
+            async with self.bot.session_factory() as session:
+                count = await problemset.replace_problemset(session, problems, dt.datetime.now(dt.timezone.utc))
+                await session.commit()
+            log.info("problemset cache refreshed: %d problems", count)
         except Exception:
-            log.exception("problemset refresh failed")
-            return
-        async with self.bot.session_factory() as session:
-            count = await problemset.replace_problemset(session, problems, dt.datetime.now(dt.timezone.utc))
-            await session.commit()
-        log.info("problemset cache refreshed: %d problems", count)
+            log.exception("refresh_problemset failed")
 
     @tasks.loop(time=dt.time(hour=0, minute=5, tzinfo=WIB))
     async def reset_streaks(self) -> None:
-        changed = await self.reset_broken_streaks(today_wib())
-        log.info("streaks reset: %d", changed)
+        try:
+            changed = await self.reset_broken_streaks(today_wib())
+            log.info("streaks reset: %d", changed)
+        except Exception:
+            log.exception("reset_streaks failed")
 
     @poll_solves.before_loop
     @refresh_cf_cache.before_loop
@@ -129,9 +143,10 @@ class PollerCog(commands.Cog):
     async def wait_ready(self) -> None:
         await self.bot.wait_until_ready()
         guild = self._guild()
-        if guild is not None and not self.role_ids:
-            async with self.bot.session_factory() as session:
-                self.role_ids = await ensure_rank_roles(guild, session)
+        async with self._roles_lock:
+            if guild is not None and not self.role_ids:
+                async with self.bot.session_factory() as session:
+                    self.role_ids = await ensure_rank_roles(guild, session)
 
 
 async def setup(bot: commands.Bot) -> None:
