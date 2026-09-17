@@ -17,15 +17,13 @@ from bot.services.leveling import exp_progress, level_for, rank_for
 
 async def build_profile_data(session: AsyncSession, user: User, avatar: bytes | None, now: datetime) -> ProfileData:
     cache = await cf_cache.get_cf_cache(session, user.discord_id)
-    last_online = None
-    if cache is not None:
-        last_online = cache.last_online
-        if last_online.tzinfo is None:
-            last_online = last_online.replace(tzinfo=timezone.utc)
     level = level_for(user.exp)
     exp_in_level, exp_need = exp_progress(user.exp)
     lines: list[str] = []
+    last_solve_at = None
     for row in await solved.last_solved(session, user.discord_id, limit=3):
+        if last_solve_at is None:
+            last_solve_at = row.solved_at if row.solved_at.tzinfo else row.solved_at.replace(tzinfo=timezone.utc)
         problem = await problemset.get_problem(session, row.contest_id, row.index)
         code = f"{row.contest_id}{row.index}"
         lines.append(f"{code} · {problem.name}" if problem else code)
@@ -40,7 +38,7 @@ async def build_profile_data(session: AsyncSession, user: User, avatar: bytes | 
         rating=cache.rating if cache else None,
         max_rating=cache.max_rating if cache else None,
         cf_rank=cache.rank if cache else None,
-        last_seen=format_last_seen(last_online, now) if cache else "unknown",
+        last_seen=format_last_seen(last_solve_at, now) if last_solve_at else "never",
         last_solved=lines,
         solved_count=await solved.solved_count(session, user.discord_id),
         streak=user.streak,

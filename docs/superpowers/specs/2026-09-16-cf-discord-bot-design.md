@@ -208,7 +208,7 @@ Turunan (tidak disimpan): `solved_count = COUNT(solved_problems WHERE user_id)`,
   EXP dalam level, rating, rank CF, rank Discord, max rating, last seen, 3 last solved (dari `solved_problems`
   order by `solved_at` desc), solved count, streak.
 - Unrated (`rating` null): rating tampil `Unrated` abu-abu, rank CF `Unrated`, max `-`.
-- Last seen relatif: `just now`, `{n}m ago`, `{n}h ago`, `{n}d ago`.
+- Last seen = waktu solve baru terakhir (dari `solved_problems`), relatif: `just now`, `{n}m ago`, `{n}h ago`, `{n}d ago`; belum pernah solve tampil `never`. Nilai `lastOnlineTimeSeconds` dari API Codeforces tertinggal berjam-jam, jadi tidak dipakai.
 - Embed berisi gambar + `discord.ui.Button(style=ButtonStyle.link, label="See Profile", url="https://codeforces.com/profile/{handle}")`.
   Link button Discord tidak bisa berwarna hijau. Keputusan user: tetap link button.
 

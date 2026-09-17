@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from bot.cf.models import Problem, UserInfo
@@ -15,7 +15,7 @@ async def test_build_profile_data(session):
     user.streak = 3
     await cf_cache.upsert_cf_cache(session, 1, UserInfo("tourist", 3800, 4000, "legendary grandmaster", "lgm", int(NOW.timestamp()) - 7200, "https://x/y.png"), NOW)
     await problemset.replace_problemset(session, [Problem(1, "A", "Theatre Square", 1000, ())], NOW)
-    await solved.add_solved(session, 1, 1, "A", NOW)
+    await solved.add_solved(session, 1, 1, "A", NOW - timedelta(hours=2))
     await solved.add_solved(session, 1, 99, "Z", datetime(2020, 1, 1, tzinfo=timezone.utc))
     await session.commit()
     result = await build_profile_data(session, user, b"avatar", NOW)
@@ -31,4 +31,4 @@ async def test_build_profile_data_without_cache(session):
     user = await users.create_user(session, 1, "nb")
     await session.commit()
     result = await build_profile_data(session, user, None, NOW)
-    assert result.rating is None and result.last_seen == "unknown" and result.last_solved == []
+    assert result.rating is None and result.last_seen == "never" and result.last_solved == []
