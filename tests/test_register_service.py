@@ -62,3 +62,11 @@ async def test_fetch_all_accepted_paginates():
     svc = RegisterService(client, sleep=no_sleep)
     subs = await svc.fetch_all_accepted("h")
     assert len(subs) == 1001 and client.calls == 2
+
+
+async def test_start_rejects_same_handle_for_other_user():
+    svc = RegisterService(FakeClient([]), sleep=no_sleep, clock=lambda: 100)
+    svc.start(1, "Tourist", PROBLEM)
+    with pytest.raises(RegistrationInProgress):
+        svc.start(2, "tourist", PROBLEM)
+    assert 2 not in svc.pending

@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 from datetime import datetime, timezone
 
 import discord
@@ -16,6 +17,15 @@ from bot.services.register import PendingRegistration, RegistrationInProgress
 from bot.services.roles import apply_rank, ensure_rank_roles, set_level_nickname
 
 log = logging.getLogger(__name__)
+HANDLE_RE = re.compile(r"^[A-Za-z0-9_.-]{3,24}$")
+
+
+class AlreadyRegistered(Exception):
+    pass
+
+
+def is_valid_handle(handle: str) -> bool:
+    return HANDLE_RE.fullmatch(handle) is not None
 
 
 def build_instruction_embed(pending: PendingRegistration) -> discord.Embed:
@@ -35,6 +45,10 @@ async def finalize_registration(
     accepted: list[Submission],
     now: datetime,
 ) -> User:
+    if await users.get_by_discord(session, pending.discord_id) is not None:
+        raise AlreadyRegistered()
+    if await users.get_by_handle(session, info.handle) is not None:
+        raise AlreadyRegistered()
     user = await users.create_user(session, pending.discord_id, info.handle)
     items = [(s.problem.contest_id, s.problem.index, datetime.fromtimestamp(s.created_at, tz=timezone.utc)) for s in accepted]
     await solved.bulk_add_solved(session, user.discord_id, items)
@@ -52,7 +66,9 @@ class RegisterCog(commands.Cog):
     @app_commands.describe(handle="Your Codeforces handle")
     async def register(self, interaction: discord.Interaction, handle: str) -> None:
         bot = self.bot
-        await interaction.response.defer()
+        if not is_valid_handle(handle):
+            await send_error(interaction, "Invalid Codeforces handle.")
+            return
         async with bot.session_factory() as session:
             if await users.get_by_discord(session, interaction.user.id) is not None:
                 await send_error(interaction, "You are already registered.")
@@ -64,10 +80,14 @@ class RegisterCog(commands.Cog):
         if not problems:
             await send_error(interaction, "Problem list is not ready yet. Try again in a minute.")
             return
+        await interaction.response.defer()
         try:
             info = (await bot.cf.user_info([handle]))[0]
-        except CodeforcesError:
-            await send_error(interaction, f"Codeforces handle **{handle}** was not found.")
+        except CodeforcesError as exc:
+            if "not found" in str(exc):
+                await send_error(interaction, f"Codeforces handle **{handle}** was not found.")
+            else:
+                await send_error(interaction, "Codeforces is unavailable right now. Try again later.")
             return
         try:
             pending = bot.register_service.start(interaction.user.id, info.handle, random.choice(problems))
@@ -84,7 +104,11 @@ class RegisterCog(commands.Cog):
             return
         accepted = await bot.register_service.fetch_all_accepted(info.handle)
         async with bot.session_factory() as session:
-            await finalize_registration(session, pending, info, accepted, datetime.now(timezone.utc))
+            try:
+                await finalize_registration(session, pending, info, accepted, datetime.now(timezone.utc))
+            except AlreadyRegistered:
+                await message.edit(embed=error_embed("This handle or account was registered in the meantime."), view=None)
+                return
             role_ids = await ensure_rank_roles(interaction.guild, session)
         member = interaction.guild.get_member(interaction.user.id)
         if member is not None:

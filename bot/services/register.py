@@ -48,6 +48,8 @@ class RegisterService:
     def start(self, discord_id: int, handle: str, problem: Problem) -> PendingRegistration:
         if discord_id in self.pending:
             raise RegistrationInProgress()
+        if any(p.handle.lower() == handle.lower() for p in self.pending.values()):
+            raise RegistrationInProgress()
         now = int(self._clock())
         pending = PendingRegistration(discord_id, handle, problem, now, now + self._timeout)
         self.pending[discord_id] = pending

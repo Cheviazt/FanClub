@@ -29,12 +29,12 @@ class DailyCog(commands.Cog):
     @app_commands.guild_only()
     @app_commands.command(name="daily", description="Your three daily problems (900, 1200, 1600)")
     async def daily(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer()
         async with self.bot.session_factory() as session:
             user = await users.get_by_discord(session, interaction.user.id)
             if user is None:
                 await send_error(interaction, "You are not registered yet. Use `/register`.")
                 return
+            await interaction.response.defer()
             try:
                 problems = await get_or_create_daily(session, user.discord_id, today_wib())
             except NotEnoughProblems:

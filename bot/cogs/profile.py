@@ -58,12 +58,12 @@ class ProfileCog(commands.Cog):
     @app_commands.describe(user="Whose profile to show (default: you)")
     async def profile(self, interaction: discord.Interaction, user: discord.Member | None = None) -> None:
         target = user or interaction.user
-        await interaction.response.defer()
         async with self.bot.session_factory() as session:
             row = await users.get_by_discord(session, target.id)
             if row is None:
                 await send_error(interaction, f"{target.mention} is not registered yet. Use `/register`.")
                 return
+            await interaction.response.defer()
             cache = await cf_cache.get_cf_cache(session, row.discord_id)
             avatar: bytes | None = None
             if cache and cache.avatar_url:
