@@ -46,10 +46,8 @@ def reminder_embed(contest: Contest) -> discord.Embed:
         title=f"⏳ Starting soon: {discord.utils.escape_markdown(contest.name)}",
         url=contest.url,
         description=(
-            f"▸ Begins <t:{start}:R> at <t:{start}:t>
-"
-            f"▸ Duration {format_duration(contest.duration)}
-"
+            f"▸ Begins <t:{start}:R> at <t:{start}:t>\n"
+            f"▸ Duration {format_duration(contest.duration)}\n"
             "▸ Register now if you have not yet. Good luck!"
         ),
         colour=PLATFORM_COLORS.get(contest.platform, 0x1E88E5),
