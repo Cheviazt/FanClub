@@ -21,6 +21,9 @@ class AvatarCache:
         self._directory.mkdir(parents=True, exist_ok=True)
         self._path(discord_id).write_bytes(data)
 
+    def delete(self, discord_id: int) -> None:
+        self._path(discord_id).unlink(missing_ok=True)
+
 
 USERPIC_HOST = "https://userpic.codeforces.org/"
 MIRROR_PREFIX = "https://codeforces.com/userpic.codeforces.org/"

@@ -75,3 +75,18 @@ async def test_roles(session):
     await roles.set_role_id(session, 10, "Rookie", 101)
     await session.commit()
     assert await roles.get_role_ids(session, 10) == {"Rookie": 101}
+
+
+async def test_delete_user_removes_children(session):
+    await users.create_user(session, 1, "a")
+    await solved.add_solved(session, 1, 1, "A", NOW)
+    await daily.save_daily(session, 1, date(2026, 9, 16), [P(1, "A", 900)])
+    await cf_cache.upsert_cf_cache(session, 1, UserInfo("a", None, None, None, None, 1, ""), NOW)
+    await session.commit()
+    assert await users.delete_user(session, 1) is True
+    await session.commit()
+    assert await users.get_by_discord(session, 1) is None
+    assert await solved.solved_count(session, 1) == 0
+    assert await daily.get_daily(session, 1, date(2026, 9, 16)) == []
+    assert await cf_cache.get_cf_cache(session, 1) is None
+    assert await users.delete_user(session, 1) is False

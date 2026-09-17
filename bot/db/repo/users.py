@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.models import User
+from bot.db.models import CfCache, DailyProblem, SolvedProblem, User
 
 
 async def create_user(session: AsyncSession, discord_id: int, handle: str) -> User:
@@ -24,3 +24,14 @@ async def get_by_handle(session: AsyncSession, handle: str) -> User | None:
 
 async def list_users(session: AsyncSession) -> list[User]:
     return list((await session.execute(select(User).order_by(User.discord_id))).scalars().all())
+
+
+async def delete_user(session: AsyncSession, discord_id: int) -> bool:
+    user = await session.get(User, discord_id)
+    if user is None:
+        return False
+    for model in (SolvedProblem, DailyProblem, CfCache):
+        await session.execute(delete(model).where(model.user_id == discord_id))
+    await session.delete(user)
+    await session.flush()
+    return True

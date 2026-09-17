@@ -115,3 +115,11 @@ async def test_fetch_avatar_uses_mirror_when_cdn_fails(tmp_path):
     assert await fetch_avatar(client, cache, 1, "https://userpic.codeforces.org/1/title/a.jpg", "https://cdn.discordapp.com/x.png") == b"mirror"
     assert cache.load(1) == b"mirror"
     await client.close()
+
+
+def test_cache_delete(tmp_path):
+    cache = AvatarCache(tmp_path / "avatars")
+    cache.store(1, b"img")
+    cache.delete(1)
+    cache.delete(1)
+    assert cache.load(1) is None

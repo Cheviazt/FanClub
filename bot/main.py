@@ -20,6 +20,8 @@ EXTENSIONS = (
     "bot.cogs.leaderboard",
     "bot.cogs.daily",
     "bot.cogs.refresh",
+    "bot.cogs.grinding",
+    "bot.cogs.unregister",
     "bot.cogs.poller",
 )
 

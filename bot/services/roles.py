@@ -50,3 +50,10 @@ async def set_level_nickname(member: discord.Member, level: int, handle: str) ->
         await member.edit(nick=nickname_for(level, handle), reason="level update")
     except (discord.Forbidden, discord.HTTPException) as exc:
         log.warning("cannot set nickname for %s: %s", member.id, exc)
+
+
+async def clear_nickname(member: discord.Member) -> None:
+    try:
+        await member.edit(nick=None, reason="unregister")
+    except (discord.Forbidden, discord.HTTPException) as exc:
+        log.warning("cannot clear nickname for %s: %s", member.id, exc)
