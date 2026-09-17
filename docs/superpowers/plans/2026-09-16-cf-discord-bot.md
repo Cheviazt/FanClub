@@ -71,7 +71,7 @@ include = ["bot*"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = [
-    "ignore:Dialect sqlite\+pysqlite does \*not\* support Decimal objects natively:sqlalchemy.exc.SAWarning",
+    'ignore:Dialect sqlite\+pysqlite does \*not\* support Decimal objects natively:sqlalchemy.exc.SAWarning',
 ]
 ```
 
