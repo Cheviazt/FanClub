@@ -9,4 +9,4 @@ FONT_DIR = ASSETS_DIR / "fonts"
 
 @lru_cache(maxsize=256)
 def get_font(weight: str, size: int) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(str(FONT_DIR / f"Poppins-{weight}.ttf"), size)
+    return ImageFont.truetype(str(FONT_DIR / f"JetBrainsMono-{weight}.ttf"), size)

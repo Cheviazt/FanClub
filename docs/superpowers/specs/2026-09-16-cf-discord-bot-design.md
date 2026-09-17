@@ -28,7 +28,7 @@ Di luar scope MVP: `/store`, `/unregister`, notifikasi lanjutan, multi-guild.
 | Discord | discord.py 2.x (app commands, `discord.ui`, `tasks.loop`) |
 | HTTP | httpx (async) |
 | DB | PostgreSQL 16, SQLAlchemy 2 async (asyncpg), Alembic |
-| Render gambar | Pillow, font Poppins TTF (OFL) di `assets/fonts/` |
+| Render gambar | Pillow, font JetBrains Mono TTF (OFL) di `assets/fonts/` |
 | Config | pydantic-settings dari `.env` |
 | Test | pytest, pytest-asyncio, respx (mock httpx), aiosqlite (DB test in-memory) |
 | Deploy | Docker multi-stage + docker-compose (`bot` + `db`) |
@@ -231,7 +231,7 @@ Turunan (tidak disimpan): `solved_count = COUNT(solved_problems WHERE user_id)`,
 
 ## 7. Render Gambar
 
-Semua template 974x650 RGB. Font Poppins: Regular, Medium, SemiBold, Bold.
+Semua template 974x650 RGB. Font JetBrains Mono: Regular, Medium, SemiBold, Bold.
 `fit_text(draw, text, box, weight, max_size, min_size, align)`: turunkan ukuran font dari `max_size`
 sampai muat lebar box. Bila di `min_size` masih terlalu lebar, potong karakter dan tambahkan `…`.
 Berlaku untuk semua teks dinamis (judul soal, handle, tags).
