@@ -6,3 +6,5 @@ __pycache__/
 *.egg-info/
 dist/
 .superpowers/
+preview_*.png
+tmp_migrate.db
