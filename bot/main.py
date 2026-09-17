@@ -19,6 +19,7 @@ EXTENSIONS = (
     "bot.cogs.profile",
     "bot.cogs.leaderboard",
     "bot.cogs.daily",
+    "bot.cogs.refresh",
     "bot.cogs.poller",
 )
 

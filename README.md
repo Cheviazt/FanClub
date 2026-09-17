@@ -8,6 +8,7 @@ Discord bot for a competitive programming community, linked to Codeforces.
 - `/profile [@user]`: profile card image with level, money, EXP, Codeforces stats, last solved, streak.
 - `/leaderboard <level|rating|solved|streaks>`: paginated image leaderboard, 7 per page.
 - `/daily`: three personal daily problems (900, 1200, 1600) that you have never solved.
+- `/refresh [@user]`: resync Codeforces data, award missed solves, fix level, rank role, and nickname. Refreshing someone else needs Manage Server. 60 second cooldown per user.
 - Background poller: new accepted solves give EXP (`rating / 10`) and money (`rating / 200`), update level, rank role, nickname, streak, and post a notification.
 
 ## Setup
