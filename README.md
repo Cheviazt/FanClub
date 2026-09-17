@@ -2,10 +2,6 @@
 
 A Discord bot for the FanClub competitive programming community at Universitas Brawijaya. It links Discord accounts to Codeforces handles and turns solved problems into levels, ranks, and a shared leaderboard.
 
-## What it does
-
-Once a member links their Codeforces handle, the bot watches their submissions. Every problem the account solves for the first time earns EXP (problem rating divided by 10) and money (problem rating divided by 200). EXP raises the member's level, the level decides their rank role, and the nickname is updated to show the current level. Problems solved before registration count toward the solved total but do not give EXP, and no problem is rewarded twice.
-
 ## Features
 
 - Registration by proof of ownership: the member submits a compilation error on a random problem within five minutes.
