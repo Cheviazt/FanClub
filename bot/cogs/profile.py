@@ -53,6 +53,7 @@ class ProfileCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
+    @app_commands.guild_only()
     @app_commands.command(name="profile", description="Show a player's profile card")
     @app_commands.describe(user="Whose profile to show (default: you)")
     async def profile(self, interaction: discord.Interaction, user: discord.Member | None = None) -> None:

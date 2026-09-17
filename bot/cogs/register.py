@@ -47,6 +47,7 @@ class RegisterCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
+    @app_commands.guild_only()
     @app_commands.command(name="register", description="Link your Codeforces handle to this Discord account")
     @app_commands.describe(handle="Your Codeforces handle")
     async def register(self, interaction: discord.Interaction, handle: str) -> None:

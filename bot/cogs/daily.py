@@ -26,6 +26,7 @@ class DailyCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
+    @app_commands.guild_only()
     @app_commands.command(name="daily", description="Your three daily problems (900, 1200, 1600)")
     async def daily(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
