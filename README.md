@@ -1,33 +1,90 @@
 # FanClub Bot
 
-Discord bot for a competitive programming community, linked to Codeforces.
+A Discord bot for the FanClub competitive programming community at Universitas Brawijaya. It links Discord accounts to Codeforces handles and turns solved problems into levels, ranks, and a shared leaderboard.
+
+## What it does
+
+Once a member links their Codeforces handle, the bot watches their submissions. Every problem the account solves for the first time earns EXP (problem rating divided by 10) and money (problem rating divided by 200). EXP raises the member's level, the level decides their rank role, and the nickname is updated to show the current level. Problems solved before registration count toward the solved total but do not give EXP, and no problem is rewarded twice.
 
 ## Features
 
-- `/register <handle>`: link a Codeforces handle. Verify by submitting a Compilation Error on a random problem within 5 minutes.
-- `/profile [@user]`: profile card image with level, money, EXP, Codeforces stats, last solved, streak.
-- `/leaderboard <level|rating|solved|streaks>`: paginated image leaderboard, 7 per page.
-- `/daily`: three personal daily problems (900, 1200, 1600) that you have never solved.
-- `/grinding <count> <rating> [tags]`: 1 to 4 random unsolved problems at an exact rating; tags (comma separated) must all be present.
-- `/unregister`: unlink your handle and delete all progress, after a confirmation button.
-- `/how` and `/howtoregist` (also `$how`, `$howtoregist`): community welcome with ranks and commands, and a three step registration guide.
-- Contest announcements (Codeforces, CodeChef, AtCoder) up to a week ahead plus a reminder one hour before start, in `CONTEST_CHANNEL_ID`.
-- Daily practice reminder at 09:00 Asia/Jakarta in `REMINDER_CHANNEL_ID` (mentions everyone).
-- `/resetall` (administrators): strips every manageable role except those in `RESET_KEEP_ROLE_IDS` and clears every nickname, after a confirmation button.
-- `/refresh [@user]`: resync Codeforces data, award missed solves, fix level, rank role, and nickname. Refreshing someone else needs Manage Server. 60 second cooldown per user.
-- Background poller: new accepted solves give EXP (`rating / 10`) and money (`rating / 200`), update level, rank role, nickname, streak, and post a notification.
+- Registration by proof of ownership: the member submits a compilation error on a random problem within five minutes.
+- Levels, eight rank roles from Rookie to Legendary Master, and automatic nicknames in the form `【level】handle`.
+- Daily streaks, tracked in Asia/Jakarta time.
+- Rendered profile cards, leaderboards (level, rating, solved, streaks) with pagination, three personal daily problems, and custom practice sets by rating and tags.
+- Accepted-solve announcements as image cards in a channel, mentioning the solver.
+- Contest announcements for Codeforces, CodeChef and AtCoder up to a week ahead, plus a reminder one hour before the start.
+- A daily practice reminder at 09:00 Asia/Jakarta.
+- Welcome and registration guides via `/how`, `/howtoregist`, `$how` and `$howtoregist`.
 
-## Setup
+### Commands
 
-1. Create a Discord application, enable the Server Members and Message Content intents, invite the bot with `applications.commands`, `Manage Roles`, `Manage Nicknames`, `Send Messages`, `Attach Files`.
-2. Copy `.env.example` to `.env` and fill `DISCORD_TOKEN`, `GUILD_ID`, `NOTIFY_CHANNEL_ID`. Optional: `CONTEST_CHANNEL_ID`, `REMINDER_CHANNEL_ID` (the bot needs Mention Everyone there).
-3. Run:
+| Command | Description |
+|---|---|
+| `/register handle` | Link a Codeforces handle to your Discord account |
+| `/unregister` | Unlink your handle and delete your progress |
+| `/profile [@user]` | Profile card with level, money, EXP, rating, recent solves and streak |
+| `/leaderboard type` | Top players by `level`, `rating`, `solved` or `streaks` |
+| `/daily` | Three problems (900, 1200, 1600) you have not solved, refreshed daily |
+| `/grinding count rating [tags]` | One to four unsolved problems at an exact rating, optionally filtered by tags |
+| `/refresh [@user]` | Resync Codeforces data, award missed solves, fix role and nickname |
+| `/how`, `/howtoregist` | Community introduction and registration guide |
+| `/resetall` | Administrators only: strip roles and nicknames from every member |
+
+## Requirements
+
+- Docker and Docker Compose on the host
+- A Discord application with a bot user
+- Python 3.12 if you want to run the tests or develop locally
+
+## Installation
+
+1. Create an application at the Discord Developer Portal, add a bot, and copy its token.
+2. Under Bot, enable the **Server Members Intent** and the **Message Content Intent**.
+3. Invite the bot with the `bot` and `applications.commands` scopes and these permissions: Manage Roles, Manage Nicknames, Send Messages, Embed Links, Attach Files, Mention Everyone.
+4. In the server, move the bot's role above the rank roles. The bot creates the rank roles on first start if they do not exist.
+5. Clone the repository and create the environment file:
+
+```bash
+git clone https://github.com/powfulf/FanClub.git
+cd FanClub
+cp .env.example .env
+```
+
+6. Fill in `.env`:
+
+| Variable | Required | Description |
+|---|---|---|
+| `DISCORD_TOKEN` | yes | Bot token |
+| `GUILD_ID` | yes | Server ID |
+| `NOTIFY_CHANNEL_ID` | yes | Channel for accepted-solve announcements |
+| `CONTEST_CHANNEL_ID` | no | Channel for contest announcements; leave empty to disable |
+| `REMINDER_CHANNEL_ID` | no | Channel for the daily reminder; leave empty to disable |
+| `RESET_KEEP_ROLE_IDS` | no | Comma separated role IDs that `/resetall` must keep |
+| `DATABASE_URL` | no | Defaults to the bundled PostgreSQL service |
+
+Enable Developer Mode in Discord (User Settings, Advanced) to copy server and channel IDs.
+
+7. Start the stack:
 
 ```bash
 docker compose up -d --build
 ```
 
-The bot role must be above the rank roles it manages in the server role list.
+The bot container runs database migrations and then connects to Discord. Follow the logs with `docker compose logs -f bot`. PostgreSQL data lives in the `pgdata` volume and cached avatars in the `botdata` volume, so rebuilding the image does not lose anything.
+
+## Deployment with GitHub Actions
+
+The workflow in `.github/workflows/deploy.yml` runs the test suite on every push to `main` and then connects to the server over SSH to pull the latest code and rebuild the containers.
+
+On the server, clone the repository to `~/fanclub`, create `.env`, and start the stack once by hand. Generate an SSH key pair for the workflow and add the public key to `~/.ssh/authorized_keys`:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/github_actions -N ""
+cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
+```
+
+Add these repository secrets on GitHub: `VPS_HOST`, `VPS_USER`, `VPS_PORT`, and `VPS_SSH_KEY` (the private key). After that, pushing to `main` deploys automatically.
 
 ## Development
 
@@ -37,28 +94,8 @@ python -m venv .venv
 .venv/Scripts/python -m pytest -q
 ```
 
-Run locally against a Postgres instance by setting `DATABASE_URL`, then `alembic upgrade head` and `python -m bot`.
+Tests run against an in-memory SQLite database and mock all network calls. To run the bot outside Docker, set `DATABASE_URL` to a PostgreSQL instance, run `alembic upgrade head`, then `python -m bot`.
 
-## Deployment (GitHub Actions)
+## License
 
-Every push to `main` runs the test suite, then SSHes into the VPS, pulls the latest code, and rebuilds the containers.
-
-One-time VPS setup (Ubuntu, user with Docker access):
-
-```bash
-git clone https://github.com/powfulf/FanClub.git ~/fanclub
-cd ~/fanclub
-cp .env.example .env
-docker compose up -d --build
-```
-
-Create an SSH key for the workflow on the VPS and add the public half to `~/.ssh/authorized_keys`:
-
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/github_actions -N ""
-cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
-```
-
-Repository secrets required: `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY` (contents of `~/.ssh/github_actions`).
-
-`.env` lives only on the VPS. Edit it there and run `docker compose up -d` to apply changes.
+Released under the MIT License. See [LICENSE](LICENSE).
