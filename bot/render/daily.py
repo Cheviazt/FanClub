@@ -14,14 +14,17 @@ TAGS_Y = 98
 RATING_WIDTH = 100
 
 
-def render_daily(problems: list[Problem]) -> bytes:
+def render_daily(problems: list[Problem], solved: set[tuple[int, str]] | None = None) -> bytes:
     base = Image.open(ASSETS_DIR / "daily.png").convert("RGB")
     draw = ImageDraw.Draw(base)
+    done = solved or set()
     for problem, (x0, y0, x1, y1) in zip(problems, BOXES):
         left = x0 + PADDING
         right = x1 - PADDING
         title_box = (left, y0 + TITLE_Y - 14, right - RATING_WIDTH, y0 + TITLE_Y + 14)
-        fit_text(draw, f"{problem.code} · {problem.name}", title_box, "SemiBold", 26, 14, WHITE, align="left")
+        is_done = problem.key in done
+        title_color = MUTED if is_done else WHITE
+        fit_text(draw, f"{problem.code} · {problem.name}", title_box, "SemiBold", 26, 14, title_color, align="left", strike=is_done)
         rating_text = "?" if problem.rating is None else str(problem.rating)
         rating_box = (right - RATING_WIDTH, y0 + TITLE_Y - 14, right, y0 + TITLE_Y + 14)
         fit_text(draw, rating_text, rating_box, "Bold", 26, 14, cf_rating_color(problem.rating), align="right")

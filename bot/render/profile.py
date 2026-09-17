@@ -92,7 +92,7 @@ def render_profile(data: ProfileData) -> bytes:
     handle_color = cf_rank_color(data.cf_rank)
     rank_color = DISCORD_RANK_COLORS.get(data.rank_name, GRAY)
 
-    fit_text(draw, f"Lv {data.level}", SLOT_LEVEL, "Bold", 26, 14, WHITE)
+    fit_text(draw, str(data.level), SLOT_LEVEL, "Bold", 34, 16, WHITE)
     fit_text(draw, data.handle, SLOT_HANDLE, "Bold", 34, 18, handle_color)
     fit_text(draw, data.rank_name, SLOT_RANK, "SemiBold", 20, 12, rank_color)
     fit_text(draw, f"{data.exp_in_level}/{data.exp_need}", SLOT_EXP, "SemiBold", 20, 12, WHITE)

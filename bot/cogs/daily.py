@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from bot.cf.models import Problem
 from bot.cogs.common import send_error
-from bot.db.repo import users
+from bot.db.repo import solved, users
 from bot.render.daily import render_daily
 from bot.services.daily import NotEnoughProblems, get_or_create_daily
 from bot.services.streak import today_wib
@@ -40,7 +40,8 @@ class DailyCog(commands.Cog):
             except NotEnoughProblems:
                 await send_error(interaction, "Could not find enough unsolved problems for you today.")
                 return
-        png = await asyncio.to_thread(render_daily, problems)
+            done = await solved.solved_keys(session, user.discord_id)
+        png = await asyncio.to_thread(render_daily, problems, done)
         file = discord.File(io.BytesIO(png), filename=FILENAME)
         await interaction.followup.send(file=file, view=build_daily_view(problems))
 

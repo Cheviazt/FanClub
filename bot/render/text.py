@@ -35,15 +35,23 @@ def fit_text(
     min_size: int,
     fill: str,
     align: str = "center",
+    strike: bool = False,
 ) -> None:
     x0, y0, x1, y1 = box
     width = x1 - x0
     font = fit_font(text, width, weight, max_size, min_size)
     shown = truncate(font, text, width)
     cy = (y0 + y1) / 2
+    shown_width = font.getlength(shown)
     if align == "left":
         draw.text((x0, cy), shown, font=font, fill=fill, anchor="lm")
+        start = x0
     elif align == "right":
         draw.text((x1, cy), shown, font=font, fill=fill, anchor="rm")
+        start = x1 - shown_width
     else:
         draw.text(((x0 + x1) / 2, cy), shown, font=font, fill=fill, anchor="mm")
+        start = (x0 + x1) / 2 - shown_width / 2
+    if strike and shown:
+        thickness = max(2, font.size // 12)
+        draw.line((start, cy, start + shown_width, cy), fill=fill, width=thickness)

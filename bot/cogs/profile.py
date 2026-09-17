@@ -63,7 +63,13 @@ class ProfileCog(commands.Cog):
                 return
             await interaction.response.defer()
             cache = await cf_cache.get_cf_cache(session, row.discord_id)
-            avatar = await fetch_avatar(self.bot.cf, self.bot.avatars, row.discord_id, cache.avatar_url if cache else "")
+            avatar = await fetch_avatar(
+                self.bot.cf,
+                self.bot.avatars,
+                row.discord_id,
+                cache.avatar_url if cache else "",
+                target.display_avatar.with_size(256).url,
+            )
             data = await build_profile_data(session, row, avatar, datetime.now(timezone.utc))
         png = await asyncio.to_thread(render_profile, data)
         file = discord.File(io.BytesIO(png), filename="profile.png")

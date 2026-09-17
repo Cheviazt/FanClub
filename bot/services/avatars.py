@@ -22,13 +22,20 @@ class AvatarCache:
         self._path(discord_id).write_bytes(data)
 
 
-async def fetch_avatar(client, cache: AvatarCache, discord_id: int, url: str) -> bytes | None:
-    if not url:
-        return None
+async def fetch_avatar(client, cache: AvatarCache, discord_id: int, url: str, fallback_url: str = "") -> bytes | None:
+    if url:
+        try:
+            data = await client.fetch_bytes(url)
+        except Exception as exc:
+            log.warning("avatar fetch failed for %s: %s", discord_id, exc)
+        else:
+            cache.store(discord_id, data)
+            return data
+    cached = cache.load(discord_id)
+    if cached is not None or not fallback_url:
+        return cached
     try:
-        data = await client.fetch_bytes(url)
+        return await client.fetch_bytes(fallback_url)
     except Exception as exc:
-        log.warning("avatar fetch failed for %s: %s", discord_id, exc)
-        return cache.load(discord_id)
-    cache.store(discord_id, data)
-    return data
+        log.warning("fallback avatar fetch failed for %s: %s", discord_id, exc)
+        return None

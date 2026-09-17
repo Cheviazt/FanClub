@@ -69,3 +69,27 @@ async def test_fetch_avatar_falls_back_to_cache(tmp_path):
     assert await fetch_avatar(client, cache, 2, "https://userpic.codeforces.org/a.jpg") is None
     assert await fetch_avatar(client, cache, 3, "") is None
     await client.close()
+
+
+@respx.mock
+async def test_fetch_avatar_uses_discord_fallback(tmp_path):
+    respx.get("https://userpic.codeforces.org/a.jpg").mock(return_value=httpx.Response(503, text="busy"))
+    respx.get("https://cdn.discordapp.com/x.png").mock(return_value=httpx.Response(200, content=b"discord"))
+    cache = AvatarCache(tmp_path / "avatars")
+    client = make_client()
+    data = await fetch_avatar(client, cache, 1, "https://userpic.codeforces.org/a.jpg", "https://cdn.discordapp.com/x.png")
+    assert data == b"discord"
+    assert cache.load(1) is None
+    cache.store(2, b"old")
+    assert await fetch_avatar(client, cache, 2, "https://userpic.codeforces.org/a.jpg", "https://cdn.discordapp.com/x.png") == b"old"
+    await client.close()
+
+
+def test_fit_text_strike_draws_line():
+    from PIL import Image, ImageDraw
+
+    from bot.render.text import fit_text
+
+    im = Image.new("RGB", (300, 60))
+    fit_text(ImageDraw.Draw(im), "done", (0, 0, 300, 60), "SemiBold", 26, 14, "#FFFFFF", align="left", strike=True)
+    assert im.getpixel((5, 30)) == (255, 255, 255)
