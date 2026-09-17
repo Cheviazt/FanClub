@@ -14,6 +14,7 @@ from bot.render.profile import ProfileData, format_last_seen, render_profile
 from bot.services.avatars import fetch_avatar
 from bot.services.leveling import exp_progress, level_for, rank_for
 
+
 async def build_profile_data(session: AsyncSession, user: User, avatar: bytes | None, now: datetime) -> ProfileData:
     cache = await cf_cache.get_cf_cache(session, user.discord_id)
     last_online = None
