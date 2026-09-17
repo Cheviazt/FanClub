@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot.cf.models import Problem
-from bot.cogs.common import image_embed, send_error
+from bot.cogs.common import send_error
 from bot.db.repo import users
 from bot.render.daily import render_daily
 from bot.services.daily import NotEnoughProblems, get_or_create_daily
@@ -42,8 +42,7 @@ class DailyCog(commands.Cog):
                 return
         png = await asyncio.to_thread(render_daily, problems)
         file = discord.File(io.BytesIO(png), filename=FILENAME)
-        embed = image_embed(f"Daily problems for {user.handle}", FILENAME)
-        await interaction.followup.send(embed=embed, file=file, view=build_daily_view(problems))
+        await interaction.followup.send(file=file, view=build_daily_view(problems))
 
 
 async def setup(bot: commands.Bot) -> None:

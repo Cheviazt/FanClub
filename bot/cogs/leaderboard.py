@@ -6,13 +6,12 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot.cogs.common import error_embed, image_embed, send_error
+from bot.cogs.common import error_embed, send_error
 from bot.render.leaderboard import render_leaderboard
 from bot.services.leaderboard import LEADERBOARD_TYPES, fetch_page
 
 log = logging.getLogger(__name__)
 FILENAME = "leaderboard.png"
-TITLES = {"level": "Leaderboard · Level", "rating": "Leaderboard · Rating", "solved": "Leaderboard · Solved", "streaks": "Leaderboard · Streaks"}
 
 
 class LeaderboardView(discord.ui.View):
@@ -30,12 +29,12 @@ class LeaderboardView(discord.ui.View):
         self.back.disabled = self.page <= 1
         self.next.disabled = self.page >= self.total_pages
 
-    async def build_message(self) -> tuple[discord.Embed, discord.File]:
+    async def build_file(self) -> discord.File:
         async with self.session_factory() as session:
             rows, self.total_pages = await fetch_page(session, self.kind, self.page)
         png = await asyncio.to_thread(render_leaderboard, self.kind, rows, self.page, self.total_pages)
         self.sync_buttons()
-        return image_embed(TITLES[self.kind], FILENAME), discord.File(io.BytesIO(png), filename=FILENAME)
+        return discord.File(io.BytesIO(png), filename=FILENAME)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id == self.owner_id:
@@ -44,8 +43,8 @@ class LeaderboardView(discord.ui.View):
         return False
 
     async def _show(self, interaction: discord.Interaction) -> None:
-        embed, file = await self.build_message()
-        await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+        file = await self.build_file()
+        await interaction.response.edit_message(attachments=[file], view=self)
 
     @discord.ui.button(label="Back", style=discord.ButtonStyle.secondary)
     async def back(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
@@ -85,8 +84,8 @@ class LeaderboardCog(commands.Cog):
     async def leaderboard(self, interaction: discord.Interaction, type: app_commands.Choice[str]) -> None:
         await interaction.response.defer()
         view = LeaderboardView(self.bot.session_factory, type.value, interaction.user.id, page=1, total_pages=1)
-        embed, file = await view.build_message()
-        view.message = await interaction.followup.send(embed=embed, file=file, view=view, wait=True)
+        file = await view.build_file()
+        view.message = await interaction.followup.send(file=file, view=view, wait=True)
 
 
 async def setup(bot: commands.Bot) -> None:

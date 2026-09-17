@@ -13,12 +13,6 @@ def info_embed(title: str, description: str, colour: int = BLUE) -> discord.Embe
     return discord.Embed(title=title, description=description, colour=colour)
 
 
-def image_embed(title: str, filename: str) -> discord.Embed:
-    embed = discord.Embed(title=title, colour=BLUE)
-    embed.set_image(url=f"attachment://{filename}")
-    return embed
-
-
 async def send_error(interaction: discord.Interaction, message: str) -> None:
     embed = error_embed(message)
     if interaction.response.is_done():

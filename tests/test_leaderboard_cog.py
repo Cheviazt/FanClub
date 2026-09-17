@@ -27,9 +27,9 @@ async def test_view_build_message(session_factory):
     async with session_factory() as s:
         await seed(s, 3)
     view = LeaderboardView(session_factory, "solved", owner_id=1, page=1, total_pages=1)
-    embed, file = await view.build_message()
+    file = await view.build_file()
     assert file.filename == "leaderboard.png"
-    assert embed.image.url == "attachment://leaderboard.png"
+    assert view.total_pages == 1
 
 
 async def test_interaction_check_rejects_others(session_factory):
