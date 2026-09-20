@@ -41,7 +41,7 @@ A Discord bot for the FanClub competitive programming community at Universitas B
 5. Clone the repository and create the environment file:
 
 ```bash
-git clone https://github.com/powfulf/FanClub.git
+git clone https://github.com/Cheviazt/FanClub.git
 cd FanClub
 cp .env.example .env
 ```

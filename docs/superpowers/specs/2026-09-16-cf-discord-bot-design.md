@@ -1,7 +1,7 @@
 # Codeforces Discord Bot: Design Spec (MVP)
 
 Tanggal: 2026-09-16
-Repo: https://github.com/powfulf/FanClub.git
+Repo: https://github.com/Cheviazt/FanClub.git
 Status: disetujui user, siap dibuat implementation plan.
 
 ## 1. Tujuan
