@@ -11,8 +11,10 @@ from bot.cf.client import CodeforcesError
 from bot.cf.models import UserInfo
 from bot.config import WIB
 from bot.db.repo import cf_cache, problemset, users
+from bot.db.repo import settings as settings_repo
 from bot.render.accepted import AcceptedData, render_accepted
 from bot.services.roles import apply_rank, ensure_rank_roles, set_level_nickname
+from bot.services.settings import MENTION_ON_SOLVE, NICKNAME_SYNC, SOLVE_ANNOUNCEMENTS
 from bot.services.solve_processor import SolveResult, process_user
 from bot.services.streak import is_broken, today_wib
 
@@ -55,14 +57,19 @@ class PollerCog(commands.Cog):
     def _guild(self) -> discord.Guild | None:
         return self.bot.get_guild(self.bot.settings.guild_id)
 
-    async def sync_member(self, result: SolveResult) -> None:
+    async def user_flags(self, discord_id: int) -> dict[str, bool]:
+        async with self.bot.session_factory() as session:
+            return await settings_repo.get_flags(session, discord_id)
+
+    async def sync_member(self, result: SolveResult, flags: dict[str, bool] | None = None) -> None:
         guild = self._guild()
         if guild is None:
             return
         member = guild.get_member(result.discord_id)
         if member is None:
             return
-        if result.new_level != result.old_level:
+        allow_nickname = flags is None or flags[NICKNAME_SYNC]
+        if allow_nickname and result.new_level != result.old_level:
             await set_level_nickname(member, result.new_level, result.handle)
         if result.new_rank != result.old_rank:
             if not self.role_ids:
@@ -77,14 +84,20 @@ class PollerCog(commands.Cog):
         return channel
 
     async def apply_side_effects(self, result: SolveResult) -> None:
-        await self.sync_member(result)
+        flags = await self.user_flags(result.discord_id)
+        await self.sync_member(result, flags)
+        if not flags[SOLVE_ANNOUNCEMENTS]:
+            return
         channel = self._notify_channel()
         if channel is None:
             return
         png = await asyncio.to_thread(render_accepted, accepted_data(result))
         file = discord.File(io.BytesIO(png), filename="accepted.png")
+        mention = flags[MENTION_ON_SOLVE]
+        content = f"<@{result.discord_id}>" if mention else f"**{result.handle}**"
+        allowed = discord.AllowedMentions(users=mention)
         try:
-            await channel.send(content=f"<@{result.discord_id}>", file=file, view=accepted_view(result), allowed_mentions=discord.AllowedMentions(users=True))
+            await channel.send(content=content, file=file, view=accepted_view(result), allowed_mentions=allowed)
         except discord.HTTPException as exc:
             log.warning("notification failed: %s", exc)
 
@@ -92,6 +105,7 @@ class PollerCog(commands.Cog):
         if not results:
             return
         last = results[-1]
+        flags = await self.user_flags(last.discord_id)
         await self.sync_member(SolveResult(
             discord_id=last.discord_id,
             handle=last.handle,
@@ -103,15 +117,19 @@ class PollerCog(commands.Cog):
             old_rank=results[0].old_rank,
             new_rank=last.new_rank,
             streak=last.streak,
-        ))
+        ), flags)
+        if not flags[SOLVE_ANNOUNCEMENTS]:
+            return
         channel = self._notify_channel()
         if channel is None:
             return
         exp = sum(r.exp_gained for r in results)
         money = sum((r.money_gained for r in results), Decimal("0.00"))
-        text = f"<@{last.discord_id}> **{last.handle}** solved {len(results)} problems in one sync: +{exp} EXP, +${money:.2f}."
+        mention = flags[MENTION_ON_SOLVE]
+        who = f"<@{last.discord_id}>" if mention else f"**{last.handle}**"
+        text = f"{who} solved {len(results)} problems in one sync: +{exp} EXP, +${money:.2f}."
         try:
-            await channel.send(text, allowed_mentions=discord.AllowedMentions(users=True))
+            await channel.send(text, allowed_mentions=discord.AllowedMentions(users=mention))
         except discord.HTTPException as exc:
             log.warning("notification failed: %s", exc)
 

@@ -8,9 +8,11 @@ from discord.ext import commands
 
 from bot.cogs.common import GREEN, info_embed, send_error
 from bot.db.repo import cf_cache, users
+from bot.db.repo import settings as settings_repo
 from bot.services.avatars import fetch_avatar
 from bot.services.leveling import level_for, rank_for
 from bot.services.roles import apply_rank, ensure_rank_roles, set_level_nickname
+from bot.services.settings import NICKNAME_SYNC
 from bot.services.solve_processor import process_user
 from bot.services.streak import today_wib
 
@@ -64,7 +66,10 @@ async def refresh_user(bot, discord_id: int, today: date) -> RefreshReport | Non
             async with bot.session_factory() as session:
                 poller.role_ids = await ensure_rank_roles(guild, session)
         await apply_rank(member, rank_for(level).name, poller.role_ids)
-        await set_level_nickname(member, level, handle)
+        async with bot.session_factory() as session:
+            flags = await settings_repo.get_flags(session, discord_id)
+        if flags[NICKNAME_SYNC]:
+            await set_level_nickname(member, level, handle)
     return RefreshReport(handle=handle, rating=info.rating, level=level, new_solves=len(results))
 
 

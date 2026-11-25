@@ -22,6 +22,7 @@ EXTENSIONS = (
     "bot.cogs.refresh",
     "bot.cogs.grinding",
     "bot.cogs.unregister",
+    "bot.cogs.settings",
     "bot.cogs.admin",
     "bot.cogs.help",
     "bot.cogs.contests",

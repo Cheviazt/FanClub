@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.models import CfCache, DailyProblem, SolvedProblem, User
+from bot.db.models import CfCache, DailyProblem, SolvedProblem, User, UserSettings
 
 
 async def create_user(session: AsyncSession, discord_id: int, handle: str) -> User:
@@ -30,7 +30,7 @@ async def delete_user(session: AsyncSession, discord_id: int) -> bool:
     user = await session.get(User, discord_id)
     if user is None:
         return False
-    for model in (SolvedProblem, DailyProblem, CfCache):
+    for model in (SolvedProblem, DailyProblem, CfCache, UserSettings):
         await session.execute(delete(model).where(model.user_id == discord_id))
     await session.delete(user)
     await session.flush()

@@ -23,6 +23,7 @@ A Discord bot for the FanClub competitive programming community at Universitas B
 | `/leaderboard type` | Top players by `level`, `rating`, `solved` or `streaks` |
 | `/daily` | Three problems (900, 1200, 1600) you have not solved, refreshed daily |
 | `/grinding count rating [tags]` | One to four unsolved problems at an exact rating, optionally filtered by tags |
+| `/settings` | Toggle solve announcements, mentions, and nickname sync for yourself |
 | `/refresh [@user]` | Resync Codeforces data, award missed solves, fix role and nickname |
 | `/how`, `/howtoregist` | Community introduction and registration guide |
 | `/resetall` | Administrators only: strip roles and nicknames from every member |

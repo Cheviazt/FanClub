@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import JSON, BigInteger, Date, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import JSON, BigInteger, Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, true
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -81,3 +81,12 @@ class ContestNotice(Base):
     contest_key: Mapped[str] = mapped_column(String(64), primary_key=True)
     announced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class UserSettings(Base):
+    __tablename__ = "user_settings"
+
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.discord_id"), primary_key=True, autoincrement=False)
+    solve_announcements: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    mention_on_solve: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    nickname_sync: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())

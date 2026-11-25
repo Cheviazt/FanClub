@@ -46,6 +46,7 @@ def how_embed(role_ids: dict[str, int]) -> discord.Embed:
             "`/daily` ⟶ three fresh problems every day\n"
             "`/grinding count rating [tags]` ⟶ practice set tailored to you\n"
             "`/refresh` ⟶ resync your profile\n"
+            "`/settings` ⟶ choose how the bot announces and mentions you\n"
             "`/unregister` ⟶ unlink your account"
         ),
         inline=False,
